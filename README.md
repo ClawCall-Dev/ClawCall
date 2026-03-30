@@ -30,6 +30,7 @@ Or manually — copy `SKILL.md` into your agent's skills directory.
 
 ## Links
 
+- [ClawHub Skill Page](https://clawhub.ai/shreyjindal81/clawcall)
 - [ClawCall Dashboard](https://clawcall.dev)
 - [API Documentation](https://api.clawcall.dev)
 
