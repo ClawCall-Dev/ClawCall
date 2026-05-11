@@ -4,13 +4,15 @@ Make real AI-powered phone calls from any AI agent. ClawCall dials the number, h
 
 **20 free minutes. No setup. No API keys to configure.**
 
-## Install
+## Install From ClawHub
 
 ```bash
-clawhub install clawcall
+openclaw skills install clawcall-dev
 ```
 
-Or manually — copy `SKILL.md` into your agent's skills directory.
+Published skill: https://clawhub.ai/clawcall-dev/clawcall-dev
+
+Or manually, download the skill zip from ClawHub and add `SKILL.md` to your agent's skills directory.
 
 ## What it does
 
@@ -26,11 +28,11 @@ Or manually — copy `SKILL.md` into your agent's skills directory.
 
 > "Phone the restaurant at +15551234567 and make a reservation for 4 people Saturday at 7 PM"
 
-> "Get me through to a real person at my insurance company — here's the number"
+> "Get me through to a real person at my insurance company - here's the number"
 
 ## Links
 
-- [ClawHub Skill Page](https://clawhub.ai/shreyjindal81/clawcall)
+- [Published ClawHub Skill](https://clawhub.ai/clawcall-dev/clawcall-dev)
 - [ClawCall Dashboard](https://clawcall.dev)
 - [API Documentation](https://api.clawcall.dev)
 
