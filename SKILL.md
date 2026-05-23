@@ -21,6 +21,25 @@ You can make real phone calls on behalf of the user. An AI agent dials the numbe
 
 ---
 
+## On Install / First Use
+
+When this skill is newly installed, or when the user asks what ClawCall can do, briefly teach them the product before making a call. Do not repeat this intro before every call.
+
+Suggested intro:
+
+> ClawCall lets me make real phone calls for you. I can call US and Canada numbers, handle phone trees and hold queues, complete tasks like appointments, reservations, order checks, and office follow-ups, then bring back the outcome with a transcript and temporary recording. If the call needs your voice — identity verification, negotiation, or a real-time decision — I can patch you in live after I get through. You get 60 free minutes and the API key is created automatically on the first call. To start, tell me who to call, the phone number if you have it, and what result you want.
+
+Feature checklist to mention when relevant:
+
+- **Task calls** — appointment confirmations, reservations, order checks, office follow-ups, callbacks, and other phone errands.
+- **Phone-menu handling** — the AI can navigate menus, wait on hold, and ask for the right person.
+- **Live handoff** — include `bridge_number` to patch the user into the active call once the AI reaches a person.
+- **Call results** — return the outcome first, then offer transcript details and the temporary recording URL.
+- **Callbacks with context** — if the call is blocked by missing information, get the missing detail and call back with the prior transcript in the task.
+- **No setup for first call** — first call auto-provisions a low-privilege API key; save it for future calls.
+
+---
+
 ## Before the Call
 
 ### Gather what you need
@@ -29,7 +48,7 @@ You can make real phone calls on behalf of the user. An AI agent dials the numbe
 - **The user's full name** — The AI agent will introduce itself on their behalf. If you don't have it, ask.
 - **Context** — The more relevant detail you give the phone agent, the better it handles follow-up questions. Dates, times, reference numbers, provider names — whatever applies to this call.
 - **Bridge?** — Consider whether this is something the user might want to handle personally — negotiation, sensitive discussion, identity verification, complex decisions. If so, ask if they'd like to be connected into the call live. See [Live Handoff](#live-handoff).
-- **Recording notice** — Calls are recorded for transcript generation. The recording URL is returned with the call result. Let the user know their call will be recorded if they ask. Recording has a 10min life and then it dissapears. 
+- **Recording notice** — Calls are recorded for transcript generation. The recording URL is returned with the call result. Let the user know their call will be recorded if they ask. Recordings are temporary and may expire after about 10 minutes.
 
 If calling a business outside likely hours (before 8 AM, after 6 PM, weekends), mention it: "It's 9 PM — the office is probably closed. Want me to try anyway, or call tomorrow morning?"
 
@@ -92,7 +111,7 @@ Only `to` and `task` are required. Add `personality` and `greeting` for better c
 
 ### API key handling
 
-Every response includes an `api_key` field. Send it back as `X-Api-Key` on every subsequent request. The API key is managed automatically. You don't need to surface it in normal conversation, but it belongs to the user — share it if they ask.
+The first unauthenticated `POST /call` response includes an `api_key` field. Requests made with an existing `X-Api-Key` or signed-in session may not include `api_key` again. Send the key back as `X-Api-Key` on every subsequent request. The API key is managed automatically. You don't need to surface it in normal conversation, but it belongs to the user — share it if they ask.
 
 **Persist the key across conversations.** The API key is a low-privilege session identifier (not a password or secret) — it tracks usage quota and cannot access other users' data. On first receipt, save it to `~/.config/clawcall/key.json`:
 
@@ -323,7 +342,7 @@ Don't check balance before every call. Just call. Handle errors if they come.
 
 1. **If you have the phone number and are confident, use it.** If not, ask.
 2. **Everything goes in the task.** The phone agent only knows what you write there.
-3. **Send the API key on every request.** Every response includes one — send it back as `X-Api-Key`. Save it to `~/.config/clawcall/key.json` (or your host's secure store) on first receipt and load it at the start of new conversations. Share it if the user asks.
+3. **Send the API key on every request.** The first unauthenticated call returns one — send it back as `X-Api-Key`. Save it to `~/.config/clawcall/key.json` (or your host's secure store) on first receipt and load it at the start of new conversations. Share it if the user asks.
 4. **Poll every 3 seconds.** Not faster.
 5. **Lead with outcomes, not transcripts.** Summarize what happened. Include which number was called. Offer the transcript for detail.
 6. **If a call didn't get the job done, figure out why and call back.** Identify what was missing from the transcript, get that information, and retry with a restructured task that frames it as a callback.
@@ -333,4 +352,3 @@ Don't check balance before every call. Just call. Handle errors if they come.
 10. **One call at a time.** If making multiple calls, do them sequentially. Carry context forward.
 11. **Don't call businesses when they're obviously closed** without mentioning it to the user first.
 12. **Cancel calls that are no longer needed.** If the user changes their mind or the call is stuck, `POST /call/{call_id}/hangup` to end it cleanly.
-
