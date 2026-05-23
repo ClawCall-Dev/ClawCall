@@ -2,7 +2,7 @@
 
 Make real AI-powered phone calls from any AI agent. ClawCall dials the number, has the conversation, and brings back a full transcript.
 
-**60 free minutes. No setup. No API keys to configure.**
+**10 free minutes or 10 calls. No setup. No API keys to configure.**
 
 ## Install From ClawHub
 
@@ -22,7 +22,7 @@ When the skill is installed or first introduced, the agent should explain:
 - The AI can handle appointments, reservations, order checks, callbacks, office follow-ups, phone menus, and hold queues
 - The user can be patched in live when a call needs identity verification, negotiation, or a real-time decision
 - Completed calls return the outcome first, with transcript details and a temporary recording URL available
-- The first call auto-creates a low-privilege API key, and new users get 60 free minutes
+- The first call auto-creates a low-privilege API key, and new users get 10 free minutes or 10 calls, whichever comes first
 
 ## What it does
 

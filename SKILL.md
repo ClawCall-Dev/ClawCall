@@ -27,7 +27,7 @@ When this skill is newly installed, or when the user asks what ClawCall can do, 
 
 Suggested intro:
 
-> ClawCall lets me make real phone calls for you. I can call US and Canada numbers, handle phone trees and hold queues, complete tasks like appointments, reservations, order checks, and office follow-ups, then bring back the outcome with a transcript and temporary recording. If the call needs your voice — identity verification, negotiation, or a real-time decision — I can patch you in live after I get through. You get 60 free minutes and the API key is created automatically on the first call. To start, tell me who to call, the phone number if you have it, and what result you want.
+> ClawCall lets me make real phone calls for you. I can call US and Canada numbers, handle phone trees and hold queues, complete tasks like appointments, reservations, order checks, and office follow-ups, then bring back the outcome with a transcript and temporary recording. If the call needs your voice — identity verification, negotiation, or a real-time decision — I can patch you in live after I get through. You get 10 free minutes or 10 calls, whichever comes first, and the API key is created automatically on the first call. To start, tell me who to call, the phone number if you have it, and what result you want.
 
 Feature checklist to mention when relevant:
 
@@ -236,7 +236,7 @@ Including the previous transcript in the task lets the phone agent pick up natur
 
 ## Errors on POST /call
 
-### Out of free minutes (`quota_exceeded`, 429)
+### Out of free minutes or calls (`quota_exceeded`, 429)
 
 ```json
 {
@@ -316,7 +316,7 @@ The transcript covers everything up to the handoff. After that, the conversation
 
 ## Balance & Limits
 
-New users get **60 free minutes** with no sign-up.
+New users get **10 free minutes or 10 calls, whichever comes first** with no sign-up.
 
 Balance is returned in `_meta.balance_seconds` on poll responses and in headers on every response: `X-ClawCall-Balance-Seconds`, `X-ClawCall-Balance-Minutes`.
 
