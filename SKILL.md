@@ -123,6 +123,16 @@ If your host environment provides a secure secret store, prefer that over the fi
 
 At the start of any new conversation involving phone calls, check for this file (or your secure store) first. If the key exists, use it — don't wait for a new one to be issued.
 
+### Connecting this agent to the user's account
+
+If the user asks to connect or link this agent to their ClawCall account, or asks for a ClawCall sign-in link, load the saved API key and send:
+
+```
+https://clawcall.dev/sign-in?token=<api_key>
+```
+
+Do not create a new key for this. Tell the user to open the link to attach this agent's key, calls, balance, and history to their account. If no saved key exists yet, explain that the agent needs to make its first ClawCall call before it has a key to link.
+
 ---
 
 ## During the Call
