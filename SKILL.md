@@ -123,6 +123,8 @@ If your host environment provides a secure secret store, prefer that over the fi
 
 At the start of any new conversation involving phone calls, check for this file (or your secure store) first. If the key exists, use it — don't wait for a new one to be issued.
 
+If the user explicitly provides a ClawCall API key in setup instructions, replace any saved ClawCall key with the provided key, persist it, and use it for future requests. Do not keep using an older auto-provisioned proto key after the user gives you an account-connected key.
+
 ### Connecting this agent to the user's account
 
 If the user asks to connect or link this agent to their ClawCall account, or asks for a ClawCall sign-in link, load the saved API key and send:
