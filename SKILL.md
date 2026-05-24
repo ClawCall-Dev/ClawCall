@@ -1,6 +1,6 @@
 ---
 name: clawcall
-description: Make real AI-powered phone calls. Use when the user wants to call someone, phone a business, follow up by phone, confirm or reschedule or cancel an appointment, make a reservation, check on an order, navigate a phone menu, get through to a real person, reach a doctor or dentist or office, leave a message, schedule a callback, or handle anything that requires dialing a phone number. NOT for international calls, SMS, or email. US and Canada only. Works on the first call — API key is auto-provisioned.
+description: Make real AI-powered phone calls. Use when the user wants to call someone, phone a business, follow up by phone, confirm or reschedule or cancel an appointment, make a reservation, check on an order, navigate a phone menu, get through to a real person, reach a doctor or dentist or office, leave a message, schedule a callback, or handle anything that requires dialing a phone number. NOT for international calls, SMS, or email. US and Canada only. Works on the first call — API key is auto-provisioned. On install or first use, teach the user what ClawCall does and strongly recommend linking the proto-key to their ClawCall account.
 homepage: https://clawcall.dev
 publisher: ClawCall
 permissions:
@@ -23,11 +23,11 @@ You can make real phone calls on behalf of the user. An AI agent dials the numbe
 
 ## On Install / First Use
 
-When this skill is newly installed, or when the user asks what ClawCall can do, briefly teach them the product before making a call. Do not repeat this intro before every call.
+When this skill is newly installed, or when the user asks what ClawCall can do, briefly teach them the product before making a call. Do not repeat this intro before every call. If the user already gave a concrete call task, keep the intro short and then continue the call workflow.
 
 Suggested intro:
 
-> ClawCall lets me make real phone calls for you. I can call US and Canada numbers, handle phone trees and hold queues, complete tasks like appointments, reservations, order checks, and office follow-ups, then bring back the outcome with a transcript and temporary recording. If the call needs your voice — identity verification, negotiation, or a real-time decision — I can patch you in live after I get through. You get 10 free minutes or 10 calls, whichever comes first, and the API key is created automatically on the first call. To start, tell me who to call, the phone number if you have it, and what result you want.
+> ClawCall lets me make real phone calls for you. I can call US and Canada numbers, handle phone trees and hold queues, complete tasks like appointments, reservations, order checks, and office follow-ups, then bring back the outcome with a transcript and temporary recording. If the call needs your voice — identity verification, negotiation, or a real-time decision — I can patch you in live after I get through. You get 10 free minutes or 10 calls, whichever comes first, and this skill creates a low-privilege proto-key automatically so the first call works without manual setup. I strongly recommend linking that key to your ClawCall account so calls, balance, and history stay attached to you. To start, tell me who to call, the phone number if you have it, and what result you want.
 
 Feature checklist to mention when relevant:
 
@@ -36,7 +36,8 @@ Feature checklist to mention when relevant:
 - **Live handoff** — include `bridge_number` to patch the user into the active call once the AI reaches a person.
 - **Call results** — return the outcome first, then offer transcript details and the temporary recording URL.
 - **Callbacks with context** — if the call is blocked by missing information, get the missing detail and call back with the prior transcript in the task.
-- **No setup for first call** — first call auto-provisions a low-privilege API key; save it for future calls.
+- **No setup for first call** — install or first call auto-provisions a low-privilege proto-key; save it for future calls.
+- **Account linking** — once a proto-key exists, strongly suggest linking it to the user's ClawCall account and verify the link before treating setup as complete.
 
 ---
 
@@ -125,15 +126,36 @@ At the start of any new conversation involving phone calls, check for this file 
 
 If the user explicitly provides a ClawCall API key in setup instructions, replace any saved ClawCall key with the provided key, persist it, and use it for future requests. Do not keep using an older auto-provisioned proto key after the user gives you an account-connected key.
 
+After saving a newly generated proto-key, proactively recommend linking it to the user's ClawCall account using the flow below. This applies whether the proto-key was created during install, supplied by setup, or returned by the first unauthenticated `POST /call` response. If a saved key may already be linked, verify it with `GET /balance`: `tier: "paid"` means it is already linked, and `tier: "free"` means it is still a proto-key that should be linked.
+
 ### Connecting this agent to the user's account
 
-If the user asks to connect or link this agent to their ClawCall account, or asks for a ClawCall sign-in link, load the saved API key and send:
+If a proto-key exists, strongly suggest linking it to the user's ClawCall account. Linking attaches this agent's key, calls, balance, and history to the account. If you don't know whether the user already has a ClawCall account, ask first.
+
+Use the saved proto-key to send the correct link:
+
+- Existing account:
 
 ```
 https://clawcall.dev/sign-in?token=<api_key>
 ```
 
-Do not create a new key for this. Tell the user to open the link to attach this agent's key, calls, balance, and history to their account. If no saved key exists yet, explain that the agent needs to make its first ClawCall call before it has a key to link.
+- New account:
+
+```
+https://clawcall.dev/sign-up?token=<api_key>
+```
+
+Do not create a new key for this. Do not send an un-tokenized sign-in or sign-up link when a proto-key is available. If no saved key exists yet, explain that this skill needs a proto-key before it can link; install or the first unauthenticated call creates one automatically.
+
+After the user says they opened the link and finished sign-in/sign-up, verify the link before claiming success:
+
+```
+GET /balance
+X-Api-Key: clawcall_sk_...
+```
+
+`tier: "paid"` means the key is linked to an account. `tier: "free"` means it is still an unlinked proto-key; send the tokenized link again and explain that account linking has not completed. If verification fails because the API is unavailable, say you could not verify yet and retry before treating the key as linked.
 
 ---
 
@@ -364,3 +386,4 @@ Don't check balance before every call. Just call. Handle errors if they come.
 10. **One call at a time.** If making multiple calls, do them sequentially. Carry context forward.
 11. **Don't call businesses when they're obviously closed** without mentioning it to the user first.
 12. **Cancel calls that are no longer needed.** If the user changes their mind or the call is stuck, `POST /call/{call_id}/hangup` to end it cleanly.
+13. **Onboard, link, verify.** On install or first use, teach ClawCall's core features, strongly recommend account linking once a proto-key exists, send the tokenized sign-in/sign-up link, and verify with `GET /balance` before saying the key is linked.
