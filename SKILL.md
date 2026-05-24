@@ -126,7 +126,7 @@ At the start of any new conversation involving phone calls, check for this file 
 
 If the user explicitly provides a ClawCall API key in setup instructions, replace any saved ClawCall key with the provided key, persist it, and use it for future requests. Do not keep using an older auto-provisioned proto key after the user gives you an account-connected key.
 
-After saving a newly generated proto-key, proactively recommend linking it to the user's ClawCall account using the flow below. This applies whether the proto-key was created during install, supplied by setup, or returned by the first unauthenticated `POST /call` response. If a saved key may already be linked, verify it with `GET /balance`: `tier: "paid"` means it is already linked, and `tier: "free"` means it is still a proto-key that should be linked.
+After saving a newly generated proto-key, proactively recommend linking it to the user's ClawCall account using the flow below. This applies whether the proto-key was created during install, supplied by setup, or returned by the first unauthenticated `POST /call` response. If a saved key may already be linked, verify it with `GET /me`, not `GET /balance`; balance tier is not an account-link signal because free users can still have accounts.
 
 ### Connecting this agent to the user's account
 
@@ -151,11 +151,11 @@ Do not create a new key for this. Do not send an un-tokenized sign-in or sign-up
 After the user says they opened the link and finished sign-in/sign-up, verify the link before claiming success:
 
 ```
-GET /balance
+GET /me
 X-Api-Key: clawcall_sk_...
 ```
 
-`tier: "paid"` means the key is linked to an account. `tier: "free"` means it is still an unlinked proto-key; send the tokenized link again and explain that account linking has not completed. If verification fails because the API is unavailable, say you could not verify yet and retry before treating the key as linked.
+A 200 response with account fields such as `userId`, `email`, and `balanceSeconds` means the key is linked to an account. A 401 `auth_required` response means the key is still an unlinked proto-key; send the tokenized link again and explain that account linking has not completed. Do not infer linking from `GET /balance` returning `tier: "paid"` or `tier: "free"`. If verification fails because the API is unavailable, say you could not verify yet and retry before treating the key as linked.
 
 ---
 
@@ -386,4 +386,4 @@ Don't check balance before every call. Just call. Handle errors if they come.
 10. **One call at a time.** If making multiple calls, do them sequentially. Carry context forward.
 11. **Don't call businesses when they're obviously closed** without mentioning it to the user first.
 12. **Cancel calls that are no longer needed.** If the user changes their mind or the call is stuck, `POST /call/{call_id}/hangup` to end it cleanly.
-13. **Onboard, link, verify.** On install or first use, teach ClawCall's core features, strongly recommend account linking once a proto-key exists, send the tokenized sign-in/sign-up link, and verify with `GET /balance` before saying the key is linked.
+13. **Onboard, link, verify.** On install or first use, teach ClawCall's core features, strongly recommend account linking once a proto-key exists, send the tokenized sign-in/sign-up link, and verify with `GET /me` before saying the key is linked.
