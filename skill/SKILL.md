@@ -226,30 +226,33 @@ Requirements:
 - active ClawCall reserved number
 - Unlimited Reserve Plus entitlement
 
-Read before editing:
+Read before editing (the `inbound` block is `null` when not entitled):
 
 ```http
-GET /me/inbound-call-profile
+GET /me/call-preferences
 X-Api-Key: clawcall_sk_...
 ```
 
-Update:
+Update (voice/personality are global; the inbound assistant goes under `inbound`):
 
 ```http
-PUT /me/inbound-call-profile
+PUT /me/call-preferences
 Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Required: `instructions`, `voice`, `greeting`. Optional: `personality`, `handoff_number`.
+Top-level `voice`/`personality`/`greeting` are global (also drive outbound) and work for any user. The `inbound` object requires Reserve Plus + an active reserved number. Inbound required: `instructions`, `greeting`. Optional: `handoff_number`.
 
 `handoff_number` is structured data. It receives inbound terminal SMS notifications and is the number the voice agent can bridge into an inbound call. It cannot be the user's active reserved number or any ClawCall-owned number. If a saved user phone number exists, offer it as the default `handoff_number`; persist any new handoff number the user provides.
 
-Reset:
+Clear the inbound assistant (keeps global voice/personality):
 
 ```http
-DELETE /me/inbound-call-profile
+PUT /me/call-preferences
+Content-Type: application/json
 X-Api-Key: clawcall_sk_...
+
+{ "inbound": null }
 ```
 
 Poll inbound history:
@@ -272,7 +275,8 @@ Always preserve returned `action.url` and `action.sign_in_url` exactly.
 - `number_pool_exhausted` / `dial_failed` / `network_error`: retry once silently when appropriate.
 - `reserved_number_required`: user needs Unlimited Reserve Plus with an active reserved number for inbound configuration.
 - `inbound_plan_required`: Unlimited Reserve Plus is required for inbound calls.
-- `invalid_profile`: fix missing/invalid inbound `instructions`, `voice`, or `greeting`.
+- `invalid_preferences`: fix the global `voice` (must be `jessica`, `sarah`, `chris`, or `eric`).
+- `invalid_profile`: fix missing/invalid inbound `instructions` or `greeting`.
 - `invalid_handoff_number`: ask for an external reachable handoff number that is not a ClawCall number.
 
 New users get trial access for 10 calls and 10 minutes, whichever lasts later. A trial call counts only after it finalizes with at least 5 seconds of talk time.
