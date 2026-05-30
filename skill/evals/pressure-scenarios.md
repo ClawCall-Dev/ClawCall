@@ -42,8 +42,8 @@ Expected:
 
 - Do not use `POST /call`.
 - Explain inbound requires Unlimited Reserve Plus, active reserved number, and account-linked key.
-- Read `GET /me/inbound-call-profile` first if authenticated.
-- Write rich inbound `instructions`, `voice`, `greeting`, optional `personality`, optional `handoff_number`.
+- Read `GET /me/call-preferences` first if authenticated (the `inbound` block is null when not entitled).
+- Set global `voice`/`personality` at the top level; write rich inbound `instructions` + `greeting` (optional `handoff_number`) under the `inbound` object.
 
 ## Inbound History
 

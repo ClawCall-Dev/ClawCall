@@ -25,7 +25,8 @@ Always preserve returned URLs exactly. They are personalized.
 | `auth_required` (401) | Explain inbound setup requires an account-linked key; use the account-link flow if a saved key exists. |
 | `reserved_number_required` (402) | Tell the user they need Unlimited Reserve Plus with an active reserved number before inbound can be configured. Send `action.url` if present. |
 | `inbound_plan_required` (403) | Tell the user Unlimited Reserve Plus is required for inbound calls. |
-| `invalid_profile` (400) | Fix missing/invalid `instructions`, `voice`, or `greeting`. |
+| `invalid_preferences` (400) | Fix the global `voice` (must be `jessica`, `sarah`, `chris`, or `eric`). |
+| `invalid_profile` (400) | Fix missing/invalid inbound `instructions` or `greeting`. |
 | `invalid_handoff_number` (400) | Ask for an external reachable handoff number that is not a ClawCall number. |
 
 ## Outcomes

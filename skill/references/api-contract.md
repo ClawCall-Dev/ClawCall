@@ -135,54 +135,64 @@ X-Api-Key: clawcall_sk_...
 
 Idempotent. Already-ended calls return success.
 
-## `GET /me/inbound-call-profile`
+## `GET /me/call-preferences`
 
 ```http
-GET /me/inbound-call-profile
+GET /me/call-preferences
 X-Api-Key: clawcall_sk_...
 ```
 
+Top-level `voice`/`personality` are global (apply to outbound AND inbound); `greeting` here is the outbound opening line. `inbound` is `null` unless the user has an active reserved number + Unlimited Reserve Plus.
+
 ```json
 {
-  "inbound_enabled": true,
-  "active_reserved_number": {
-    "id": 12,
-    "phone_number": "+15551234567",
-    "display": "+1 (555) 123-4567"
-  },
   "configured": true,
-  "profile": {
+  "voice": "jessica",
+  "personality": "Warm, concise, professional.",
+  "greeting": "Hi, calling on behalf of Jordan Lee.",
+  "inbound": {
+    "enabled": true,
+    "configured": true,
     "instructions": "Answer as Jordan Lee's assistant...",
-    "voice": "jessica",
-    "personality": "Warm, concise, professional.",
+    "greeting": "Hi, this is Jordan's assistant. How can I help?",
+    "handoff_number": "+15559876543",
+    "active_reserved_number": {
+      "id": 12,
+      "phone_number": "+15551234567",
+      "display": "+1 (555) 123-4567"
+    }
+  }
+}
+```
+
+## `PUT /me/call-preferences`
+
+```http
+PUT /me/call-preferences
+Content-Type: application/json
+X-Api-Key: clawcall_sk_...
+```
+
+Global fields upsert for any authed user. Include `inbound` (requires Reserve Plus + active reserved number) to set the inbound assistant; send `"inbound": null` to clear it.
+
+```json
+{
+  "voice": "sarah",
+  "personality": "Warm, concise, professional.",
+  "inbound": {
+    "instructions": "Rich inbound profile instructions...",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
     "handoff_number": "+15559876543"
   }
 }
 ```
 
-## `PUT /me/inbound-call-profile`
+## `DELETE /me/call-preferences`
+
+Resets the **global** voice/personality/greeting. The inbound block is cleared via `PUT { "inbound": null }`.
 
 ```http
-PUT /me/inbound-call-profile
-Content-Type: application/json
-X-Api-Key: clawcall_sk_...
-```
-
-```json
-{
-  "instructions": "Rich inbound profile instructions...",
-  "voice": "sarah",
-  "personality": "Warm, concise, professional.",
-  "greeting": "Hi, this is Jordan's assistant. How can I help?",
-  "handoff_number": "+15559876543"
-}
-```
-
-## `DELETE /me/inbound-call-profile`
-
-```http
-DELETE /me/inbound-call-profile
+DELETE /me/call-preferences
 X-Api-Key: clawcall_sk_...
 ```
 

@@ -18,31 +18,38 @@ Coach briefly when needed: "Inbound answering is for calls to your ClawCall rese
 
 ## Configure Profile
 
-Read the current profile before editing:
+Voice and personality are **global** — they are shared with outbound calls and live at the top level of `/me/call-preferences`. The inbound-only assistant config (instructions, answer-line greeting, handoff number) lives under the `inbound` key.
+
+Read current preferences (includes the `inbound` block when the user is entitled, otherwise `inbound` is `null`):
 
 ```http
-GET /me/inbound-call-profile
+GET /me/call-preferences
 X-Api-Key: clawcall_sk_...
 ```
 
-Update profile:
+Update the inbound assistant (you may set global voice/personality in the same call):
 
 ```http
-PUT /me/inbound-call-profile
+PUT /me/call-preferences
 Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Required fields:
+```json
+{
+  "voice": "sarah",
+  "personality": "Warm, concise, professional.",
+  "inbound": {
+    "instructions": "...",
+    "greeting": "Hi, this is Jordan's assistant. How can I help?",
+    "handoff_number": "+15559876543"
+  }
+}
+```
 
-- `instructions`
-- `voice`
-- `greeting`
+Top-level `voice`/`personality`/`greeting` are global and work for any authenticated user. The `inbound` object requires an active reserved number + Unlimited Reserve Plus — otherwise the request fails (402 `reserved_number_required` / 403 `inbound_plan_required`).
 
-Optional fields:
-
-- `personality`
-- `handoff_number`
+Inbound `inbound` fields — required: `instructions`, `greeting` (the answer line). Optional: `handoff_number`.
 
 `handoff_number` is structured data. It is where ClawCall sends inbound terminal SMS notifications and the number the voice agent can bridge into an inbound call. It cannot be the user's active reserved number or any ClawCall-owned number.
 
@@ -50,12 +57,17 @@ If a saved user phone number exists, offer it as the default `handoff_number`. I
 
 Editing a profile affects only future inbound calls. Active calls keep the snapshot they started with.
 
-Reset to default:
+Clear the inbound assistant (keeps your global voice/personality):
 
 ```http
-DELETE /me/inbound-call-profile
+PUT /me/call-preferences
+Content-Type: application/json
 X-Api-Key: clawcall_sk_...
+
+{ "inbound": null }
 ```
+
+(`DELETE /me/call-preferences` resets your **global** voice/personality/greeting, not the inbound block.)
 
 ## Good Inbound Instructions
 
@@ -75,11 +87,13 @@ Example:
 
 ```json
 {
-  "instructions": "Answer inbound calls to Jordan Lee's ClawCall reserved number as Jordan's assistant. Start by finding out who is calling, what organization they represent if any, the reason for the call, urgency, and the best callback number. For appointments, deliveries, orders, repairs, reservations, or billing calls, collect concrete details: dates, times, locations, confirmation or ticket numbers, quoted amounts, deadlines, and the exact next step requested. If the caller asks for Jordan and the matter is urgent, sensitive, or requires a real-time decision, use handoff if the tool is available. If the caller is a spammer, solicitor, or refuses to identify the reason for calling, politely end the call. Do not claim to be Jordan, do not provide payment information, do not agree to legal or financial commitments, do not disclose private personal information, and do not invent facts. If a caller only wants to leave a message, take a concise message and confirm their callback number before ending. After each call, the transcript should make it easy to tell who called, why, urgency, callback number, and recommended follow-up.",
   "voice": "sarah",
   "personality": "Warm, concise, professional, protective of Jordan's time, and careful about commitments.",
-  "greeting": "Hi, this is Jordan's assistant. How can I help?",
-  "handoff_number": "+15559876543"
+  "inbound": {
+    "instructions": "Answer inbound calls to Jordan Lee's ClawCall reserved number as Jordan's assistant. Start by finding out who is calling, what organization they represent if any, the reason for the call, urgency, and the best callback number. For appointments, deliveries, orders, repairs, reservations, or billing calls, collect concrete details: dates, times, locations, confirmation or ticket numbers, quoted amounts, deadlines, and the exact next step requested. If the caller asks for Jordan and the matter is urgent, sensitive, or requires a real-time decision, use handoff if the tool is available. If the caller is a spammer, solicitor, or refuses to identify the reason for calling, politely end the call. Do not claim to be Jordan, do not provide payment information, do not agree to legal or financial commitments, do not disclose private personal information, and do not invent facts. If a caller only wants to leave a message, take a concise message and confirm their callback number before ending. After each call, the transcript should make it easy to tell who called, why, urgency, callback number, and recommended follow-up.",
+    "greeting": "Hi, this is Jordan's assistant. How can I help?",
+    "handoff_number": "+15559876543"
+  }
 }
 ```
 
