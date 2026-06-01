@@ -1,6 +1,6 @@
 ---
 name: clawcall
-description: Use when the user wants an AI agent to place a US phone call, call a business, handle hold or phone menus, confirm/reschedule/cancel/book/follow up/check an order, reach a real person, leave voicemail, connect the user into a live call, configure or inspect a ClawCall inbound reserved-number profile, poll received inbound calls, or link a ClawCall API key. Not for SMS, email, or international calls.
+description: Use when the user wants an AI agent to place a US phone call, call a business, handle hold or phone menus, confirm/reschedule/cancel/book/follow up/check an order, reach a real person, leave voicemail, connect the user into a live call, configure ClawCall voice/personality/profile or inbound reserved-number answering, poll received inbound calls, or link a ClawCall API key. Not for SMS, email, or international calls.
 homepage: https://clawcall.dev
 publisher: ClawCall
 permissions:
@@ -30,6 +30,7 @@ The phone agent only knows the **Call instructions** you send as `task`. More re
 | Call someone now | Build rich Call instructions, `POST /call`, then poll `GET /call/{call_id}` until `lifecycle = "finalized"`. |
 | Get through to a person / connect me | Use outbound calling with `bridge_number` and a handoff trigger in the Call instructions. |
 | Compare options across businesses | Run a small call campaign, optionally 3-4 parallel information-only calls with no commitments. |
+| Set up my ClawCall profile/personality | Configure global voice/personality/greeting and, if needed, inbound answering profile. |
 | Configure how my number answers calls | Use inbound profile setup. Do not `POST /call`. |
 | What calls came in? | Poll inbound history with `GET /me/calls?direction=inbound...`. |
 | Link this agent to my ClawCall account | Use the saved API key to produce the sign-in link. |
@@ -71,6 +72,17 @@ https://clawcall.dev/sign-in?token=<api_key>
 ```
 
 Do not create a new key for account linking. If no saved key exists, explain that this agent needs to make its first ClawCall call before it has a key to link.
+
+## Profile, Personality, And Voice
+
+Use profile setup when the user asks how ClawCall should sound, introduce itself, or answer calls.
+
+- `voice` is the audio voice only: `jessica` (default), `sarah`, `chris`, or `eric`.
+- `personality` is reusable style and behavior for outbound and inbound calls. Include assistant identity, tone, persistence, caution, and decision boundaries. Do not put one-call facts, dates, account numbers, or booking details here.
+- Top-level `greeting` is the user's preferred outbound opener. Keep it short; do not rely on it for instructions, AI disclosure, or recording disclosure.
+- Inbound profile `instructions` are the standing briefing for future unknown callers: who the assistant represents, what to collect, when to hand off, what never to promise or disclose, and what to report.
+
+For a good setup, ask only for the assistant name/role, desired tone, hard boundaries, and default handoff/callback number when useful. See [profile and personality](references/profile-and-personality.md).
 
 ## Outbound Call Prep
 
@@ -128,7 +140,7 @@ Write the Call instructions like a briefing memo:
 - what to do on voicemail, no answer, closure, or transfer
 - what to report back
 
-Add `personality`, `greeting`, and `voice` when explicitly specified. The defaults are the best setup. Voices: `jessica` (default, female), `sarah` (female), `chris` (male), `eric` (male).
+Add `personality`, `greeting`, and `voice` only when useful or explicitly specified. Defaults are good. Personality is style, not the call task. Voices: `jessica` (default, female), `sarah` (female), `chris` (male), `eric` (male).
 
 Use [examples](references/examples.md) for rich task shapes.
 
@@ -245,14 +257,19 @@ Top-level `voice`/`personality`/`greeting` are global (also drive outbound) and 
 
 `handoff_number` is structured data. It receives inbound terminal SMS notifications and is the number the voice agent can bridge into an inbound call. It cannot be the user's active reserved number or any ClawCall-owned number. If a saved user phone number exists, offer it as the default `handoff_number`; persist any new handoff number the user provides.
 
-Clear the inbound assistant (keeps global voice/personality):
+Clear the inbound assistant. To preserve global voice/personality/greeting, first `GET /me/call-preferences`, then echo those top-level values in the `PUT` body:
 
 ```http
 PUT /me/call-preferences
 Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 
-{ "inbound": null }
+{
+  "voice": "<current voice>",
+  "personality": "<current personality or null>",
+  "greeting": "<current greeting or null>",
+  "inbound": null
+}
 ```
 
 Poll inbound history:
@@ -286,6 +303,7 @@ New users get trial access for 10 calls and 10 minutes, whichever lasts later. A
 Rich details live here:
 
 - [Outbound calls](references/outbound-calls.md): deeper prep, live handoff, callbacks, after-call diagnosis.
+- [Profile and personality](references/profile-and-personality.md): global voice/personality/greeting and inbound profile setup.
 - [Inbound reserved numbers](references/inbound-reserved-numbers.md): full inbound profile setup and polling guidance.
 - [API contract](references/api-contract.md): complete request/response shapes.
 - [Examples](references/examples.md): rich outbound, callback, handoff, and inbound examples.

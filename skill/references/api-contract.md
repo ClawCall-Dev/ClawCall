@@ -142,7 +142,7 @@ GET /me/call-preferences
 X-Api-Key: clawcall_sk_...
 ```
 
-Top-level `voice`/`personality` are global (apply to outbound AND inbound); `greeting` here is the outbound opening line. `inbound` is `null` unless the user has an active reserved number + Unlimited Reserve Plus.
+Top-level `voice`/`personality` are global (apply to outbound AND inbound); `greeting` is the preferred outbound opener. `inbound` is `null` unless the user has an active reserved number + Unlimited Reserve Plus.
 
 ```json
 {
@@ -173,7 +173,7 @@ Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Global fields upsert for any authed user. Include `inbound` (requires Reserve Plus + active reserved number) to set the inbound assistant; send `"inbound": null` to clear it.
+Global fields upsert for any authed user. Include `inbound` (requires Reserve Plus + active reserved number) to set the inbound assistant. If preserving existing global fields while changing only `inbound`, first `GET /me/call-preferences` and echo current top-level values.
 
 ```json
 {
