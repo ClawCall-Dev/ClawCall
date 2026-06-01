@@ -18,7 +18,7 @@ Coach briefly when needed: "Inbound answering is for calls to your ClawCall rese
 
 ## Configure Profile
 
-Voice and personality are **global** — they are shared with outbound calls and live at the top level of `/me/call-preferences`. The inbound-only assistant config (instructions, answer-line greeting, handoff number) lives under the `inbound` key.
+Voice and personality are **global** — they are shared with outbound calls and live at the top level of `/me/call-preferences`. The inbound-only assistant config (instructions, answer-line greeting, handoff number) lives under the `inbound` key. For reusable style guidance, read [profile and personality](profile-and-personality.md).
 
 Read current preferences (includes the `inbound` block when the user is entitled, otherwise `inbound` is `null`):
 
@@ -57,14 +57,19 @@ If a saved user phone number exists, offer it as the default `handoff_number`. I
 
 Editing a profile affects only future inbound calls. Active calls keep the snapshot they started with.
 
-Clear the inbound assistant (keeps your global voice/personality):
+Clear the inbound assistant. To preserve global voice/personality/greeting, first read current preferences and echo the top-level values:
 
 ```http
 PUT /me/call-preferences
 Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 
-{ "inbound": null }
+{
+  "voice": "<current voice>",
+  "personality": "<current personality or null>",
+  "greeting": "<current greeting or null>",
+  "inbound": null
+}
 ```
 
 (`DELETE /me/call-preferences` resets your **global** voice/personality/greeting, not the inbound block.)

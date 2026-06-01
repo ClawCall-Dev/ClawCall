@@ -2,7 +2,7 @@
 
 ## Description
 
-ClawCall lets an AI agent place real US phone calls — a voice agent dials, navigates phone trees, handles hold time, optionally bridges the user into a live call, and returns the transcript, outcome, and recording link.
+ClawCall lets an AI agent place real US phone calls — a voice agent dials, navigates phone trees, handles hold time, optionally bridges the user into a live call, and returns the transcript, outcome, and recording link. The skill also helps configure reusable voice/personality preferences and inbound reserved-number answering profiles.
 
 This skill is ready for commercial and non-commercial use.
 
@@ -16,7 +16,7 @@ Proprietary — governed by the ClawCall Terms of Service at https://clawcall.de
 
 ## Use Case
 
-End users delegating routine phone work to an AI coding agent or assistant: calling businesses to book, confirm, reschedule, cancel, or check order/appointment status; handling phone menus and hold time; comparing options across vendors; receiving live handoff to a real person; or configuring an inbound reserved number to answer incoming calls.
+End users delegating routine phone work to an AI coding agent or assistant: calling businesses to book, confirm, reschedule, cancel, or check order/appointment status; handling phone menus and hold time; comparing options across vendors; receiving live handoff to a real person; configuring reusable ClawCall voice/personality preferences; or configuring an inbound reserved number to answer incoming calls.
 
 ## Deployment Geography for Use
 

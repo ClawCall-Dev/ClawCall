@@ -88,7 +88,7 @@ Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Only `to` and `task` are required. Add `personality` and `greeting` for better calls. Include `bridge_number` only for live handoff.
+Only `to` and `task` are required. Add `personality`, `voice`, and `greeting` only when useful or specified; see [profile and personality](profile-and-personality.md). Include `bridge_number` only for live handoff.
 
 Save `api_key` if present in the response.
 

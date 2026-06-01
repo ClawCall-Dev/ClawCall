@@ -19,8 +19,9 @@ Or manually, download the skill zip from ClawHub and add `SKILL.md` to your agen
 When the skill is installed or first introduced, the agent should explain:
 
 - ClawCall makes real outbound phone calls in the US and Canada
-- The AI can handle appointments, reservations, order checks, callbacks, office follow-ups, phone menus, and hold queues
+- The AI can handle appointments, reservations, order checks, callbacks, office follow-ups, voicemail/messages, phone menus, and hold queues
 - The user can be patched in live when a call needs identity verification, negotiation, or a real-time decision
+- Users can configure reusable voice, personality, greeting, and inbound reserved-number answering preferences
 - Completed calls return the outcome first, with transcript details and a temporary recording URL available
 - The first call auto-creates a low-privilege API key, and new users get 10 free minutes or 10 calls, whichever comes first
 
@@ -28,8 +29,10 @@ When the skill is installed or first introduced, the agent should explain:
 
 - Calls US and Canada phone numbers over real phone lines
 - AI agent handles the full conversation based on your task briefing
+- Leaves voicemail or takes messages when the task asks for it
 - Returns a complete transcript and recording
 - Live handoff: the AI navigates phone trees and hold queues, then connects you in to speak directly
+- Reusable voice/personality profile setup for outbound and inbound answering
 - Automatic retry and callback when a call needs more information
 
 ## Examples
