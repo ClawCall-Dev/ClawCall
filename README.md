@@ -52,3 +52,7 @@ When the skill is installed or first introduced, the agent should explain:
 ## License
 
 MIT
+
+## Download History
+
+[![Download History](https://skill-history.com/chart/clawcall-dev/clawcall-dev.svg)](https://skill-history.com/clawcall-dev/clawcall-dev)
