@@ -1,0 +1,46 @@
+{
+  "name": "@clawcall/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for ClawCall — AI-powered US phone calling.",
+  "license": "MIT",
+  "author": "ClawCall",
+  "homepage": "https://clawcall.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClawCall-Dev/clawcall.git",
+    "directory": "mcp"
+  },
+  "bugs": { "url": "https://github.com/ClawCall-Dev/clawcall/issues" },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "model-context-protocol",
+    "clawcall",
+    "phone",
+    "phone-calls",
+    "voice",
+    "telephony",
+    "ai-agent",
+    "claude"
+  ],
+  "mcpName": "io.github.ClawCall-Dev/clawcall",
+  "type": "module",
+  "bin": { "clawcall-mcp": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=20" },
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --test",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^20.14.0"
+  }
+}

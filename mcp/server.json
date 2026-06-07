@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ClawCall-Dev/clawcall",
+  "description": "MCP server for ClawCall — AI-powered US phone calling.",
+  "repository": {
+    "url": "https://github.com/ClawCall-Dev/clawcall",
+    "source": "github",
+    "subfolder": "mcp"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@clawcall/mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "CLAWCALL_API_KEY",
+          "description": "Optional ClawCall API key (clawcall_sk_...). Auto-provisioned on the first call if unset; shadows the saved key file when present.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "CLAWCALL_BASE_URL",
+          "description": "ClawCall REST API base URL. Defaults to https://api.clawcall.dev.",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
