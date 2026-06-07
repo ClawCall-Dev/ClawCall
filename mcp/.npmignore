@@ -1,0 +1,6 @@
+src
+test
+skill-companion
+tsconfig.json
+DESIGN.md
+*.test.ts

@@ -14,6 +14,20 @@ Published skill: https://clawhub.ai/clawcall-dev/clawcall-dev
 
 Or manually, download the skill zip from ClawHub and add `SKILL.md` to your agent's skills directory.
 
+## MCP Server
+
+Prefer the Model Context Protocol? [`mcp/`](./mcp) is a stdio MCP server that exposes the
+same ClawCall REST API as tools for any MCP host (Claude Code, Claude Desktop, Cursor,
+Windsurf). It shares one identity and balance with the skill.
+
+```bash
+claude mcp add clawcall -- npx -y @clawcall/mcp
+```
+
+See [`mcp/README.md`](./mcp/README.md) for client config and the call workflow. The skill is
+the procedural layer; the MCP server is the connectivity layer — both wrap the public API at
+`https://api.clawcall.dev`.
+
 ## What users learn on install
 
 When the skill is installed or first introduced, the agent should explain:
