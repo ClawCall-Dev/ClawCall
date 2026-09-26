@@ -55,7 +55,7 @@ Top-level `voice`/`personality`/`greeting` are global and work for any authentic
 
 Inbound fields required: `instructions`, `greeting`. Set optional `loop_in_user: true` to enable loop-in without entering a phone number.
 
-The server resolves the reserved-number owner's verified primary phone, otherwise exactly one eligible verified phone, when each call arrives. It cannot use the caller's number, the active reserved number, or another ClawCall-owned number. This destination also supplies existing terminal SMS notifications. Answering and consult acceptance do not change.
+The server resolves the reserved-number owner's verified primary phone, otherwise exactly one eligible verified phone, when each call arrives. It cannot use the caller's number, the active reserved number, or another ClawCall-owned number. This destination also supplies existing terminal SMS notifications. `warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Save the choice as top-level `warm_greeting` in `/me/call-preferences` for both inbound and outbound loop-in. An optional `warm_greeting` on `POST /call` overrides it for that call; omission uses the saved choice.
 
 Saving true validates the account phone before writing the profile. Lookup failures during a later call disable loop-in for that call while preserving normal assistant or voicemail behavior. Do not substitute another number.
 
@@ -78,7 +78,7 @@ X-Api-Key: clawcall_sk_...
 }
 ```
 
-(`DELETE /me/call-preferences` resets your **global** voice/personality/greeting, not the inbound block.)
+(`DELETE /me/call-preferences` resets your **global** voice/personality/greeting and restores `warm_greeting` to true, not the inbound block.)
 
 ## Good Inbound Instructions
 

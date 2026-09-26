@@ -33,7 +33,9 @@ Null, strings, numbers, arrays, and objects are invalid flag values. True requir
 
 The server resolves the phone before outbound number allocation and carrier dispatch. Active calls retain that destination through consult and reconnect. Scheduled SMS calls resolve it at dispatch; an explicitly authorized later retry resolves it again. Legacy queued payloads without the flag keep their saved behavior and authorization IDs.
 
-The flag enables the agent's existing loop-in tool. It does not dial the user immediately, answer for them, change consent, or alter consult deadlines.
+The flag enables the agent's existing loop-in tool. It does not dial the user immediately or answer for them.
+
+`warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Save the choice as top-level `warm_greeting` in `/me/call-preferences` for both inbound and outbound loop-in. An optional `warm_greeting` on `POST /call` overrides it for that call; omission uses the saved choice. Non-boolean values return 400 `invalid_warm_greeting`.
 
 Errors: `invalid_loop_in_user` is 400; `account_phone_unavailable` is 422 for a missing account or missing/ambiguous eligible verified phone; `account_phone_lookup_unavailable` is 503 for a timeout or provider outage; `invalid_loop_in_destination` is 400 for a prohibited destination. No outbound call is placed for these failures.
 
@@ -204,6 +206,8 @@ Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
+Top-level `warm_greeting` is a boolean, defaults to true, and applies to loop-in on both call directions. Omission preserves its saved value on REST and MCP updates. Null is invalid. Active calls retain their initial choice.
+
 Global fields upsert for any authed user. Include `inbound` (requires Reserve Plus + active reserved number) to set the inbound assistant. If preserving existing global fields while changing only `inbound`, first `GET /me/call-preferences` and echo current top-level values.
 
 The supplied inbound block replaces the prior profile. Omitted `inbound` leaves it unchanged; `inbound: null` clears it. Within a replacement block, omitted `loop_in_user` restores legacy mode using the supplied `handoff_number`, or no destination if that is absent. True and false take precedence over the legacy field and clear it in storage. The server never stores the resolved account phone in preferences. Legacy rows omit the flag on read; new rows return the saved boolean.
@@ -228,7 +232,7 @@ Hosted MCP `update_call_settings` is a partial update, unlike REST PUT. Omitted 
 
 ## `DELETE /me/call-preferences`
 
-Resets the **global** voice/personality/greeting. The inbound block is cleared via `PUT { "inbound": null }`.
+Resets the **global** voice/personality/greeting and restores `warm_greeting` to true. The inbound block is cleared via `PUT { "inbound": null }`.
 
 ```http
 DELETE /me/call-preferences

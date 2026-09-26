@@ -18,7 +18,7 @@ The owner says, "Set up an assistant to answer my number."
 
 #### Say to the owner
 
-We can start with message-taking: who called, why, their callback details, and what they need next. If you also want the assistant to answer business questions, I'll gather the facts it can use. I can enable loop-in for the situations you choose; you'll decide whether to join when ClawCall calls you.
+We can start with message-taking: who called, why, their callback details, and what they need next. If you also want the assistant to answer business questions, I'll gather the facts it can use. I can enable loop-in for the situations you choose. With warm greeting enabled, you'll decide whether to join when ClawCall calls you; with it disabled, answering connects you immediately.
 
 #### Ask only what is still missing
 
@@ -67,7 +67,7 @@ Proactively suggest loop-in when the owner wants to be reachable for time-sensit
 
 Use `inbound.loop_in_user: true` to enable connection to the owner's verified account phone without asking for a number. The server prefers an eligible verified primary phone, otherwise the single eligible verified phone. Do not replace it with a host-saved contact, the caller's number, or a ClawCall-owned number.
 
-Enabling the flag does not mean every caller is immediately connected. The instructions determine when the assistant should offer or attempt loop-in. The owner hears why they are needed and decides whether to join.
+Enabling the flag does not mean every caller is immediately connected. The instructions determine when the assistant should offer or attempt loop-in. `warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Read `get_call_settings` and save top-level `warm_greeting` with `update_call_settings` for both inbound and outbound loop-in. Pass `warm_greeting` to `place_call` or `place_call_and_wait` only for a one-call override; omission uses the saved choice. Keep the saved choice unless the user asks to change it.
 
 Specify the caller-facing explanation before the attempt: "This needs the owner's decision. I can try to connect you." Avoid promising that the owner will answer.
 
@@ -96,7 +96,7 @@ If the connected tool advertises an older set of options, do not invent missing 
 
 ## Educate without interrupting or inventing live control
 
-Prepare the owner at setup for the calls they may receive: why ClawCall will contact them, how they choose whether to join, and what the assistant does if they do not answer.
+Prepare the owner at setup for the calls they may receive: why ClawCall will contact them, whether their warm greeting setting asks them to join or connects on callback answer, and what the assistant does if they do not answer.
 
 Put caller-facing explanations into the standing instructions. The phone agent should distinguish an answer it knows, a request it can only record, and a decision that needs the owner. For example: "I can take your preferred appointment times, but I can't confirm a booking here."
 

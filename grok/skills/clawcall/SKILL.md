@@ -33,6 +33,22 @@ at `https://api.clawcall.dev/mcp` (OAuth 2.1).
   phone, and put the handoff trigger in `task`. `bridge_number` is legacy.
 - Do not run parallel calls that can book, buy, cancel, or commit.
 
+## Loop-in warm greeting
+
+- Read `get_call_settings` and use `update_call_settings` to save top-level
+  `warm_greeting` for both inbound and outbound loop-in. Keep the saved choice
+  unless the user asks to change it.
+- `warm_greeting: true` is the default: a private greeting explains why the user
+  is needed and asks whether to join. `false` connects immediately when the
+  carrier reports the callback answered, including by voicemail or screening,
+  without a greeting or acceptance question.
+- Pass `warm_greeting` to `place_call` or `place_call_and_wait` for a one-call
+  override. Omission uses the saved choice; null is invalid.
+- This preference does not enable loop-in. Enable it separately with
+  `loop_in_user` and put the trigger in the call instructions.
+- Warm greeting does not control recording or transcription. Do not promise
+  that either stops when the user joins.
+
 ## Guides
 
 `get_calling_guide` topics: `outbound`, `examples`, `errors`, `profile`,

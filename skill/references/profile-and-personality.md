@@ -7,6 +7,7 @@ Read this when the user wants to set up how ClawCall sounds, introduces itself, 
 - `voice`: sound only. Valid values are `jessica` (default), `sarah`, `chris`, and `eric`.
 - `personality`: reusable style for both outbound and inbound calls. Put identity, tone, persistence, caution, and standing boundaries here.
 - Top-level `greeting`: preferred outbound opener. Keep it short. Do not put task details or required instructions here.
+- Top-level `warm_greeting`: controls inbound and outbound loop-in, independently of the call opener. Default true gives a private greeting and asks whether to join. False connects immediately when the callback answers, including screening or voicemail. An outbound `warm_greeting` argument overrides the saved choice for that call. Omission preserves the saved preference.
 - `inbound.instructions`: standing profile for future calls to the user's reserved number.
 - `inbound.greeting`: short answer line for inbound calls.
 - `inbound.loop_in_user`: enable loop-in to the owner's verified account phone without entering a number. False disables it.

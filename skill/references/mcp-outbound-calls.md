@@ -85,7 +85,7 @@ Use `loop_in_user: true` when the chosen plan includes loop-in. The server selec
 
 The flag enables the phone agent's loop-in capability. It does not immediately connect the user. Put the trigger in `task`, such as "after reaching someone who can help," "before verification," or "before an unapproved fee." Define what the phone agent should do first and how to introduce the user.
 
-Explain the experience: ClawCall calls the user's verified phone, explains why they are needed, and the user decides whether to join. Do not describe answering as automatic consent to connect.
+`warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Read `get_call_settings` and save top-level `warm_greeting` with `update_call_settings` for both inbound and outbound loop-in. Pass `warm_greeting` to `place_call` or `place_call_and_wait` only for a one-call override; omission uses the saved choice. Keep the saved choice unless the user asks to change it.
 
 Plan for no answer, a declined invitation, or a failed connection. The phone agent should avoid new commitments, collect the next step or authorized callback information, and return an actionable blocker. Do not promise that the user will be available.
 
@@ -115,7 +115,7 @@ A current transcript confirms that the agent has reached a representative who ne
 
 #### Say to the user, if the host can deliver a live update
 
-They've reached someone who can help, but the next step needs your verification. The call was set up to loop you in at this point, so expect a call to your verified account phone. You can decide whether to join.
+They've reached someone who can help, but the next step needs your verification. The call was set up to loop you in at this point, so expect a call to your verified account phone. With warm greeting enabled, you can decide whether to join; with it disabled, answering connects you immediately.
 
 #### If live updates are unavailable
 
@@ -178,7 +178,7 @@ Jordan wants to reschedule an appointment personally after the assistant handles
 
 #### Before the call
 
-I can get through to the office and loop you in once someone who can reschedule is on the line. ClawCall will call your verified account phone, and you choose whether to join. If you can't join, I'll ask for the next step without changing the appointment.
+I can get through to the office and loop you in once someone who can reschedule is on the line. ClawCall will call your verified account phone. With warm greeting enabled, you choose whether to join; with it disabled, answering connects you immediately. If you can't join, I'll ask for the next step without changing the appointment.
 
 #### Call request
 

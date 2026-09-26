@@ -173,7 +173,9 @@ Every parallel option-search task must include:
 
 Use live handoff when the user wants to skip hold time, reach a real person, handle identity verification, negotiate, or make real-time decisions.
 
-Set `loop_in_user: true` without asking for a phone number. The server selects the verified primary account phone, or its single eligible verified phone. The user still answers and decides whether to join. This flag only makes the loop-in tool available to the agent.
+Set `loop_in_user: true` without asking for a phone number. The server selects the verified primary account phone, or its single eligible verified phone. With the default warm greeting, the user answers and decides whether to join. This flag only makes the loop-in tool available to the agent.
+
+`warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Save the choice as top-level `warm_greeting` in `/me/call-preferences` for both inbound and outbound loop-in. An optional `warm_greeting` on `POST /call` overrides it for that call; omission uses the saved choice.
 
 Omitting the flag preserves legacy `bridge_number` behavior. Explicit false disables loop-in, even with a legacy number. Explicit true selects the account phone, ignoring the legacy destination. Missing or ambiguous verified phones fail before dialing; a temporary lookup outage has a separate unavailable error. Never substitute a host-saved number or caller ID.
 

@@ -111,5 +111,5 @@ Expected:
 
 - Offer live handoff because this likely involves identity verification and sensitive decisions.
 - Set `loop_in_user: true` without collecting a handoff number. The server selects the verified account phone.
-- Preserve answering and consult acceptance. If account selection fails, report the specific error without substituting a saved phone or silently disabling loop-in.
+- Preserve the saved `warm_greeting` choice: true asks whether to join after a private greeting; false connects on callback answer, including voicemail or screening. If account selection fails, report the specific error without substituting a saved phone or silently disabling loop-in.
 - Build Call instructions that tell the agent to navigate menus/hold and bridge the user once a real representative is reached.

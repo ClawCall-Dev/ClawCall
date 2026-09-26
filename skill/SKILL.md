@@ -228,7 +228,9 @@ Use live handoff when the user wants to skip hold time, reach a real person, han
 
 Set `loop_in_user: true` without asking for a phone number. The Call instructions must include a clear trigger for when the agent should use its loop-in tool.
 
-The server prefers the verified primary account phone, otherwise exactly one eligible verified phone. Missing or ambiguous phones require account setup. A lookup outage is temporary, not a request to reverify. The flag enables capability, not automatic answering or acceptance. Legacy `bridge_number` works when the flag is omitted; explicit false disables loop-in and true ignores the legacy destination. See [API contract](references/api-contract.md) for exact precedence and validation.
+`warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Save the choice as top-level `warm_greeting` in `/me/call-preferences` for both inbound and outbound loop-in. An optional `warm_greeting` on `POST /call` overrides it for that call; omission uses the saved choice.
+
+The server prefers the verified primary account phone, otherwise exactly one eligible verified phone. Missing or ambiguous phones require account setup. A lookup outage is temporary, not a request to reverify. The flag makes loop-in available; `warm_greeting` controls what happens when the user answers. Legacy `bridge_number` works when the flag is omitted; explicit false disables loop-in and true ignores the legacy destination. See [API contract](references/api-contract.md) for exact precedence and validation.
 
 Loop-in does not promise that recording or transcription stops after the user joins. Do not describe the live conversation as private or unrecorded.
 

@@ -37,6 +37,7 @@ These errors apply to outbound call setup and inbound profile saves.
 | Code | What to do |
 | --- | --- |
 | `invalid_loop_in_user` (400) | Send true or false, not null or a string. |
+| `invalid_warm_greeting` (400) | Send true for a private greeting and join question, or false to connect on callback answer. Null and strings are invalid. |
 | `account_phone_unavailable` (422) | Connect the account or correct its verified primary phone. Never substitute a number from chat. |
 | `account_phone_lookup_unavailable` (503) | Explain the temporary lookup failure. The user can try again shortly; no outbound call was placed. Do not ask them to reverify. |
 | `invalid_loop_in_destination` (400) | Explain that the account phone cannot be the other participant or a ClawCall-owned number. |
