@@ -7,9 +7,11 @@ Read this when the user wants to set up how ClawCall sounds, introduces itself, 
 - `voice`: sound only. Valid values are `jessica` (default), `sarah`, `chris`, and `eric`.
 - `personality`: reusable style for both outbound and inbound calls. Put identity, tone, persistence, caution, and standing boundaries here.
 - Top-level `greeting`: preferred outbound opener. Keep it short. Do not put task details or required instructions here.
+- Top-level `warm_greeting`: controls inbound and outbound loop-in, independently of the call opener. Default true gives a private greeting and asks whether to join. False connects immediately when the callback answers, including screening or voicemail. An outbound `warm_greeting` argument overrides the saved choice for that call. Omission preserves the saved preference.
 - `inbound.instructions`: standing profile for future calls to the user's reserved number.
 - `inbound.greeting`: short answer line for inbound calls.
-- `inbound.handoff_number`: number to call when the inbound assistant should connect the reserved-number owner.
+- `inbound.loop_in_user`: enable loop-in to the owner's verified account phone without entering a number. False disables it.
+- `inbound.handoff_number`: legacy handoff destination, used only when the flag is omitted.
 
 ## Good Personality
 
@@ -27,7 +29,11 @@ Include:
 - operating rules: confirm details, ask clarifying questions, summarize blockers
 - boundaries: no payments, no irreversible changes, no private disclosures unless explicitly provided
 
-Do not include one-off facts such as reservation dates, order numbers, account numbers, OTPs, or appointment details. Put those in the outbound `task` or inbound `instructions`.
+Do not include one-off permitted facts such as reservation dates, order numbers, ordinary account numbers, or appointment logistics in personality. Put those in the outbound `task` or inbound `instructions` when needed.
+
+Never ask the user or call recipient for payment-card information subject to PCI DSS; protected health information (PHI); government identifiers, such as SSNs; or access credentials/authentication secrets, such as passwords, API keys, MFA/OTP codes. Do not request, obtain, repeat, relay, submit, or enter them yourself, even if supplied or authorized. Restricted values do not belong in `task`, `personality`, greetings, or inbound `instructions`. Other information is allowed when task-necessary and otherwise permitted.
+
+Include a standing boundary: if a step requires restricted data, use `loop_in_user` before the exchange so the user can handle that step directly. If loop-in is unavailable or the user cannot join, stop that part of the task and report what remains without restricted values. Loop-in does not promise that recording or transcription stops. These rules also apply to the example briefings below; broad instructions to collect details or confirm numbers never authorize restricted-data handling.
 
 ## Good Outbound Setup
 
@@ -63,7 +69,7 @@ Example:
   "inbound": {
     "instructions": "Answer inbound calls to Jordan Lee's ClawCall reserved number as Jordan's assistant. Find out who is calling, what organization they represent if any, why they are calling, urgency, and the best callback number. For appointments, deliveries, orders, repairs, reservations, or billing calls, collect concrete details: dates, times, locations, confirmation or ticket numbers, quoted amounts, deadlines, and requested next steps. If the caller asks for Jordan and the matter is urgent, sensitive, or requires a real-time decision, use handoff if available. Do not claim to be Jordan, provide payment information, agree to legal or financial commitments, disclose private information, or invent facts. If a caller wants to leave a message, take a concise message and confirm their callback number. After each call, the transcript should make it easy to tell who called, why, urgency, callback number, and recommended follow-up.",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543"
+    "loop_in_user": true
   }
 }
 ```

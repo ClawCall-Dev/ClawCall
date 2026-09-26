@@ -23,12 +23,16 @@ ClawCall lets you make real US phone calls for the user. A voice AI agent dials,
 
 The phone agent only knows the **Call instructions** you send as `task`. More relevant detail is better. Build a complete briefing before calling, and do not make the user supply public/business facts you can reasonably look up yourself.
 
+Never ask the user or call recipient for these restricted categories: payment-card information subject to PCI DSS; protected health information (PHI); government identifiers, such as SSNs; or access credentials/authentication secrets, such as passwords, API keys, MFA/OTP codes. Do not request, obtain, repeat, relay, submit, or enter them yourself, even if supplied or authorized. Do not put restricted values in `task`, `personality`, greetings, or inbound instructions. Other information is allowed when task-necessary and otherwise permitted.
+
+If a step requires restricted data, use `loop_in_user` before the exchange so the user can handle that step directly. Enable it in the call plan and state the human-only boundary. If loop-in is unavailable or the user cannot join, stop that part of the task and report what remains without restricted values. Loop-in does not promise that recording or transcription stops. Do not describe the handoff as private or unrecorded.
+
 ## Choose The Workflow
 
 | User intent | Do this |
 | --- | --- |
 | Call someone now | Build rich Call instructions, `POST /call`, then poll `GET /call/{call_id}` until `lifecycle = "finalized"`. |
-| Get through to a person / connect me | Use outbound calling with `bridge_number` and a handoff trigger in the Call instructions. |
+| Get through to a person / connect me | Use outbound calling with `loop_in_user: true` and a handoff trigger in the Call instructions. No handoff number is needed. |
 | Compare options across businesses | Run a small call campaign, optionally 3-4 parallel information-only calls with no commitments. |
 | Set up my ClawCall profile/personality | Configure global voice/personality/greeting and, if needed, inbound answering profile. |
 | Configure how my number answers calls | Use inbound profile setup. Do not `POST /call`. |
@@ -50,7 +54,7 @@ Educate at decision points, not as a generic pitch.
 
 ## Persistent State
 
-At the start of any conversation involving ClawCall, check `~/.config/clawcall/key.json` or the host secret store. If an API key exists, send it as `X-Api-Key`. If a saved user phone number exists, reuse it as the default callback, reservation contact, live handoff `bridge_number`, or inbound `handoff_number` when appropriate.
+At the start of any conversation involving ClawCall, check `~/.config/clawcall/key.json` or the host secret store. If an API key exists, send it as `X-Api-Key`. A saved user phone may supply callback or reservation contact details. For live handoff, use `loop_in_user: true`; the server selects the verified account phone, not a host-saved number.
 
 The first unauthenticated `POST /call` response can include an `api_key`. Save it immediately. When you first collect the user's own phone number, save that too:
 
@@ -82,7 +86,7 @@ Use profile setup when the user asks how ClawCall should sound, introduce itself
 - Top-level `greeting` is the user's preferred outbound opener. Keep it short; do not rely on it for instructions, AI disclosure, or recording disclosure.
 - Inbound profile `instructions` are the standing briefing for future unknown callers: who the assistant represents, what to collect, when to hand off, what never to promise or disclose, and what to report.
 
-For a good setup, ask only for the assistant name/role, desired tone, hard boundaries, and default handoff/callback number when useful. See [profile and personality](references/profile-and-personality.md).
+For a good setup, ask only for the assistant name/role, desired tone, hard boundaries, and whether to enable loop-in. No handoff number is required. See [profile and personality](references/profile-and-personality.md).
 
 ## Outbound Call Prep
 
@@ -97,7 +101,7 @@ Find these yourself when lookup tools are available:
 Ask the user mainly for private or decision-making details:
 
 - user's name, callback number, preferences, constraints, consent
-- appointment dates, patient/customer names, dates of birth, account/order/ticket numbers, insurance details
+- permitted appointment logistics, customer names, dates of birth, ordinary account/order/ticket numbers, and other task-necessary details outside the restricted categories
 - budget, acceptable alternatives, what to approve, what not to disclose
 
 Do not ask "what is the restaurant's phone number?" if a normal lookup should find it. Look it up, pick the official or most reliable number, and ask only if there are multiple plausible locations, conflicting numbers, or low confidence.
@@ -115,9 +119,9 @@ For complex calls, do call reconnaissance before dialing. Use public research an
 
 Do moderate probing. Ask for the few facts that prevent a useless or risky call, then call. Do not front-load every possible question.
 
-For OTPs, payment details, passwords, identity verification, or sensitive decisions: do not ask for passwords or stale OTPs up front. Tell the user the call may require live verification and offer options:
+For a step requiring any restricted category, never ask for the values, either before or during the call. Explain the human-only loop-in plan and its capture limitation. Ordinary verification or decisions that do not involve restricted data remain allowed within the task's boundaries. Offer options:
 
-- "I can call now and come back if they need private info."
+- "I can call now and report what step needs you, without collecting restricted information."
 - "I can bridge you in once I reach a person or verification step."
 - "I can collect prices/availability only and not commit."
 - "I can call several options and compare."
@@ -152,7 +156,7 @@ Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Only `to` and `task` are required. Include `bridge_number` only for live handoff.
+Only `to` and `task` are required. Use `loop_in_user: true` for live handoff to the verified account phone.
 
 Response includes:
 
@@ -222,11 +226,13 @@ For parallel option searches, every Call instruction must say not to commit unle
 
 Use live handoff when the user wants to skip hold time, reach a real person, handle identity verification, negotiate, or make real-time decisions.
 
-Ask for the user's own callback number, then include it as `bridge_number`. The Call instructions must include a clear trigger like: "Once you are speaking with someone who can help, tell them you are connecting Jordan now, then bridge Jordan into the live call."
+Set `loop_in_user: true` without asking for a phone number. The Call instructions must include a clear trigger for when the agent should use its loop-in tool.
 
-If a saved user phone number exists, use it as the default `bridge_number`; confirm only when the call is sensitive, the number may be stale, or the user asks to use a different number. If you collect a new bridge/callback number, persist it.
+`warm_greeting` defaults to true. True gives the user a private greeting and asks whether to join. False connects as soon as the callback answers, without a greeting or acceptance question. A screening service or voicemail can answer too. This setting does not enable loop-in by itself. Save the choice as top-level `warm_greeting` in `/me/call-preferences` for both inbound and outbound loop-in. An optional `warm_greeting` on `POST /call` overrides it for that call; omission uses the saved choice.
 
-The transcript covers everything before handoff. After the user joins, the live conversation is private.
+The server prefers the verified primary account phone, otherwise exactly one eligible verified phone. Missing or ambiguous phones require account setup. A lookup outage is temporary, not a request to reverify. The flag makes loop-in available; `warm_greeting` controls what happens when the user answers. Legacy `bridge_number` works when the flag is omitted; explicit false disables loop-in and true ignores the legacy destination. See [API contract](references/api-contract.md) for exact precedence and validation.
+
+Loop-in does not promise that recording or transcription stops after the user joins. Do not describe the live conversation as private or unrecorded.
 
 ## Inbound Reserved Numbers
 
@@ -253,11 +259,13 @@ Content-Type: application/json
 X-Api-Key: clawcall_sk_...
 ```
 
-Top-level `voice`/`personality`/`greeting` are global (also drive outbound) and work for any user. The `inbound` object requires Reserve Plus + an active reserved number. Inbound required: `instructions`, `greeting`. Optional: `handoff_number`.
+Top-level `voice`/`personality`/`greeting` are global (also drive outbound) and work for any user. The `inbound` object requires Reserve Plus + an active reserved number. Inbound required: `instructions`, `greeting`. Use optional `loop_in_user` to enable account-phone loop-in.
 
-`handoff_number` is structured data. It receives inbound terminal SMS notifications and is the number the voice agent can bridge into an inbound call. It cannot be the user's active reserved number or any ClawCall-owned number. If a saved user phone number exists, offer it as the default `handoff_number`; persist any new handoff number the user provides.
+`inbound.loop_in_user: true` selects the reserved-number owner's verified account phone when each inbound call arrives. It supplies the existing handoff and terminal-notification destination without storing a phone in preferences. No caller ID or reserved ClawCall number can substitute for it. If lookup fails, the assistant still answers with loop-in unavailable. Legacy `handoff_number` profiles remain supported when the flag is omitted. Read current preferences before a replacement update and retain fields the user did not change.
 
-Clear the inbound assistant. To preserve global voice/personality/greeting, first `GET /me/call-preferences`, then echo those top-level values in the `PUT` body:
+Add `inbound.passthrough_numbers` for callers who should ring the verified account phone directly with their incoming caller ID, bypassing the assistant and recording. Read the current list before adding or removing a caller and send the complete desired list, up to 100 US numbers. Omission preserves it; `[]` clears only passthrough. Preserve the other profile and global settings in REST replacement updates. Passthrough works independently of `loop_in_user`. See [inbound reserved numbers](references/inbound-reserved-numbers.md#passthrough) for routing and no-answer behavior.
+
+Clear the full inbound profile, including passthrough. To preserve global voice/personality/greeting, first `GET /me/call-preferences`, then echo those top-level values in the `PUT` body:
 
 ```http
 PUT /me/call-preferences
@@ -295,6 +303,10 @@ Always preserve returned `action.url` and `action.sign_in_url` exactly.
 - `invalid_preferences`: fix the global `voice` (must be `jessica`, `sarah`, `chris`, or `eric`).
 - `invalid_profile`: fix missing/invalid inbound `instructions` or `greeting`.
 - `invalid_handoff_number`: ask for an external reachable handoff number that is not a ClawCall number.
+- `invalid_loop_in_user`: send a boolean, not null or a string.
+- `account_phone_unavailable`: connect the account or correct its verified primary phone. Never replace it with a chat-supplied number.
+- `account_phone_lookup_unavailable`: explain the temporary lookup failure; the user can try again shortly. Do not ask them to reverify.
+- `invalid_loop_in_destination`: explain that the account phone cannot be the other participant or a ClawCall number.
 
 New users get trial access for 30 calls and 30 minutes, whichever lasts later. A trial call counts only after it finalizes with at least 5 seconds of talk time.
 

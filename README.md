@@ -23,6 +23,8 @@ The hosted connector can:
 - list inbound and outbound call history
 - end active calls and inspect plan or trial usage
 - serve ClawCall's calling guide before a call is placed
+- configure inbound answering and passthrough callers that ring the verified
+  account phone directly with the original caller ID, without recording or transcription
 
 The Grok Build plugin source is in [`grok/`](./grok). Its official xAI marketplace submission is tracked in [xai-org/plugin-marketplace#336](https://github.com/xai-org/plugin-marketplace/pull/336).
 

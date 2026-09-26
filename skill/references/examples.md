@@ -2,10 +2,14 @@
 
 Use these as style examples. They are intentionally verbose because the phone agent cannot rely on the user's surrounding chat context once the call starts.
 
+Never ask the user or call recipient for payment-card information subject to PCI DSS; protected health information (PHI); government identifiers, such as SSNs; or access credentials/authentication secrets, such as passwords, API keys, MFA/OTP codes. Do not request, obtain, repeat, relay, submit, or enter them yourself, even if supplied or authorized. Do not put restricted values in task, personality, greetings, inbound instructions, tool arguments, or reports. Other information is allowed when task-necessary and otherwise permitted.
+
+If a step requires restricted data, use `loop_in_user` before the exchange so the user can handle that step directly. If loop-in is unavailable or the user cannot join, stop that part of the task and report what remains without restricted values. Loop-in does not promise that recording or transcription stops. These boundaries apply to all example briefings below.
+
 ## Appointment Confirmation
 
 ```text
-Call Dr. Rivera's office on behalf of Jordan Lee. Jordan is calling about an existing dental cleaning appointment currently believed to be Tuesday, March 30 at 2:30 PM. Confirm whether that appointment is still on the calendar, confirm the office location, and ask whether Jordan needs to bring updated insurance information. If the office says the appointment must be rescheduled, ask for openings on Wednesday or Thursday after 2 PM; do not accept a morning slot or a different provider without checking with Jordan first. If they ask for Jordan's date of birth, say you do not have it available and will call back with that information. If you reach voicemail, leave a concise message asking them to call Jordan back to confirm the appointment and mention that Jordan is trying to confirm the Tuesday March 30 2:30 PM appointment. If the office is closed or the line does not answer, hang up and report that back.
+Call Dr. Rivera's office on behalf of Jordan Lee. Jordan is calling about an existing dental cleaning appointment currently believed to be Tuesday, March 30 at 2:30 PM. Confirm whether that appointment is still on the calendar, confirm the office location, and ask whether Jordan needs to bring updated insurance information. If the office says the appointment must be rescheduled, ask for openings on Wednesday or Thursday after 2 PM; do not accept a morning slot or a different provider without checking with Jordan first. If they ask for Jordan's date of birth, say you do not have it available and will call back with that information. If you reach voicemail, leave a concise message with Jordan's authorized callback number, +15559876543, asking them to call Jordan back to confirm the appointment and mention that Jordan is trying to confirm the Tuesday March 30 2:30 PM appointment. If the office is closed or the line does not answer, hang up and report that back.
 ```
 
 ## Restaurant Reservation
@@ -17,7 +21,7 @@ Call Ember Table on behalf of Jordan Lee to make a dinner reservation for 4 peop
 ## Order Or Repair Follow-Up
 
 ```text
-Call Northside Camera Repair on behalf of Jordan Lee about repair ticket NCR-10427 for a Sony A7 IV dropped off last Monday. The goal is to learn whether the repair estimate is ready, what the estimated cost is, and when the camera can be picked up. Jordan is willing to approve repairs up to $250 total, including parts and labor. If the estimate is above $250, do not approve it; ask them to hold the camera and say Jordan will call back. If they ask for the claim ticket, use NCR-10427. If they ask for an email, use jordan@example.com. If they ask for payment information, do not provide or invent any card details. If no one answers, leave a voicemail with the ticket number and ask them to call Jordan back with the estimate and pickup timing. Report back the estimate, whether anything was approved, and any promised next step.
+Call Northside Camera Repair on behalf of Jordan Lee about repair ticket NCR-10427 for a Sony A7 IV dropped off last Monday. The goal is to learn whether the repair estimate is ready, what the estimated cost is, and when the camera can be picked up. Jordan is willing to approve repairs up to $250 total, including parts and labor. If the estimate is above $250, do not approve it; ask them to hold the camera and say Jordan will call back. If they ask for the claim ticket, use NCR-10427. If they ask for an email, use jordan@example.com. If they ask for payment information, do not provide or invent any card details. If no one answers, leave a voicemail with the ticket number and Jordan's authorized callback number, +15559876543, and ask them to call Jordan back with the estimate and pickup timing. Report back the estimate, whether anything was approved, and any promised next step.
 ```
 
 ## Callback After Missing Info
@@ -37,7 +41,7 @@ Call Northside Camera Repair on behalf of Jordan Lee about repair ticket NCR-104
 {
   "to": "+15551234567",
   "task": "Call Dr. Rivera's office on behalf of Jordan Lee. Navigate the phone menu and wait on hold if needed. Tell the receptionist Jordan needs to reschedule an existing appointment. Do not choose a new appointment time yourself. Once you are speaking with someone who can reschedule the appointment, tell them you are connecting Jordan now, then bridge Jordan into the live call. If the office asks identity-verification questions before the handoff, bridge Jordan rather than guessing. If the office is closed or no one answers, hang up and report that back.",
-  "bridge_number": "+15559876543",
+  "loop_in_user": true,
   "personality": "Alex, a calm assistant calling on behalf of Jordan Lee.",
   "greeting": "Hi, this is Alex calling on behalf of Jordan Lee about rescheduling an appointment."
 }
@@ -54,7 +58,7 @@ Body for `PUT /me/call-preferences`. `voice`/`personality` are global (also driv
   "inbound": {
     "instructions": "Answer inbound calls to Jordan Lee's ClawCall reserved number as Jordan's assistant. Start by finding out who is calling, what organization they represent if any, the reason for the call, urgency, and the best callback number. For appointments, deliveries, orders, repairs, reservations, or billing calls, collect concrete details: dates, times, locations, confirmation or ticket numbers, quoted amounts, deadlines, and the exact next step requested. If the caller asks for Jordan and the matter is urgent, sensitive, or requires a real-time decision, use handoff if the tool is available. If the caller is a spammer, solicitor, or refuses to identify the reason for calling, politely end the call. Do not claim to be Jordan, do not provide payment information, do not agree to legal or financial commitments, do not disclose private personal information, and do not invent facts. If a caller only wants to leave a message, take a concise message and confirm their callback number before ending. After each call, the transcript should make it easy to tell who called, why, urgency, callback number, and recommended follow-up.",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543"
+    "loop_in_user": true
   }
 }
 ```
@@ -72,7 +76,8 @@ Call instructions:
 ```json
 {
   "to": "+18005551212",
-  "task": "Call Horizon Airlines on behalf of Jordan Lee about changing an existing flight. Jordan's record locator is H7K2Q9. The current trip is San Francisco to New York on Friday June 12, returning Sunday June 14. The goal is to learn whether Jordan can move the outbound flight to Thursday evening June 11 while keeping the same return. Ask for available Thursday evening options, total fare difference, change fee if any, refund or credit rules, and the deadline to decide. Do not approve a change, cancellation, payment, fare difference, or travel credit without Jordan's explicit approval. If they require an OTP, account login, payment card, or live identity verification, tell them you will connect Jordan or call back, then report exactly what is needed. If they can hold an option without payment or commitment, ask how long the hold lasts. If you reach voicemail or cannot reach a representative, report that back.",
+  "task": "Call Horizon Airlines on behalf of Jordan Lee about changing an existing flight. Jordan's record locator is H7K2Q9. The current trip is San Francisco to New York on Friday June 12, returning Sunday June 14. The goal is to learn whether Jordan can move the outbound flight to Thursday evening June 11 while keeping the same return. Ask for available Thursday evening options, total fare difference, change fee if any, refund or credit rules, and the deadline to decide. Do not approve a change, cancellation, payment, fare difference, or travel credit without Jordan's explicit approval. If they require an OTP, account login, payment card, or live identity verification, explain why Jordan is needed and use loop-in. If Jordan cannot join, do not guess or change the booking; report the exact requirement for a callback. If they can hold an option without payment or commitment, ask how long the hold lasts. If you reach voicemail or cannot reach a representative, report that back.",
+  "loop_in_user": true,
   "personality": "Alex, a careful travel assistant calling on behalf of Jordan Lee.",
   "greeting": "Hi, this is Alex calling on behalf of Jordan Lee about options for an existing flight reservation."
 }
