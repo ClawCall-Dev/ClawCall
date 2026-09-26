@@ -57,7 +57,6 @@ The final SSE `done` payload acknowledges v1 in `call_params_format` and uses `c
 
 Legacy clients never receive a new account-flag-only actionable draft. If a model emits a choice the legacy DTO cannot express, the server returns `call_params: null`, `status: "gathering"`, and a refresh message. Existing historical cards in already-loaded old frontend code are unchanged. The new dashboard retires superseded unconfirmed drafts and preserves the user's explicit checkbox choice during edits; confirmed historical actions remain available.
 
-Frontend releases wait for the required API release in the same environment. Railway 5.43.1 JSON output must contain the exact terminal success acknowledgment from that upload, in addition to a zero exit status and the existing health check. Build logs, another deployment's health, and early log-stream completion do not satisfy the release gate. Frontend-only releases retain the skipped-API path.
 
 ## `GET /call/{call_id}`
 
@@ -209,9 +208,11 @@ Global fields upsert for any authed user. Include `inbound` (requires Reserve Pl
 
 The supplied inbound block replaces the prior profile. Omitted `inbound` leaves it unchanged; `inbound: null` clears it. Within a replacement block, omitted `loop_in_user` restores legacy mode using the supplied `handoff_number`, or no destination if that is absent. True and false take precedence over the legacy field and clear it in storage. The server never stores the resolved account phone in preferences. Legacy rows omit the flag on read; new rows return the saved boolean.
 
+`inbound.passthrough_numbers` accepts up to 100 US E.164 caller numbers. A supplied array replaces the list, `[]` clears it, and omission preserves it even when other inbound fields are replaced. Read current preferences and preserve the required `instructions` and `greeting`, existing loop-in or legacy handoff settings, and global settings when changing only this list. Saving a nonempty list validates the verified account destination. Matched calls bypass the assistant, recording, and transcription; history reports `handling_mode: "passthrough"`.
+
 Saving true validates the owning account phone. Each future inbound call resolves it again using the reserved-number owner, not the original caller. Lookup failure on arrival disables loop-in for that call while preserving the existing assistant or voicemail flow. Active calls retain their initial destination. The same resolved destination supplies existing inbound terminal notifications.
 
-Hosted MCP `update_call_settings` is a partial update, unlike REST PUT. Omitted inbound fields preserve their current values, including a saved loop-in flag; `inbound: null` clears the profile. SMS `update_inbound_profile` retains replacement semantics. Neither accepts null for the flag.
+Hosted MCP `update_call_settings` is a partial update, unlike REST PUT. Omitted inbound fields preserve their current values, including a saved loop-in flag; `inbound: null` clears the profile. SMS `update_inbound_profile` also preserves omitted inbound fields. Neither accepts null for the flag.
 
 ```json
 {

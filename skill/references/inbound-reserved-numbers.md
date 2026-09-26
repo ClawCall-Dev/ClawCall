@@ -124,7 +124,11 @@ Inbound polling returns only terminal inbound Calls and requires inbound eligibi
 
 ## Passthrough
 
-Set `inbound.passthrough_numbers` to caller numbers that should ring the owner's verified account phone directly. For example, `{"inbound":{"passthrough_numbers":["+14155550123"]}}` through `update_call_settings`. This replaces the list; send `[]` to clear it. Omitted lists stay unchanged. To add or remove a caller, read the current settings first and send the complete desired list. Up to 100 unique US E.164 numbers are supported.
+Set `inbound.passthrough_numbers` to caller numbers that should ring the owner's verified account phone directly. Up to 100 unique US E.164 numbers are supported.
+
+First `GET /me/call-preferences`. Build a `PUT /me/call-preferences` body with the saved top-level `voice`, `personality`, and `greeting`; under `inbound`, preserve `instructions`, `greeting`, and any saved `loop_in_user` or legacy `handoff_number`. Set `passthrough_numbers` to the complete desired list, preserving existing entries when adding a caller. Do not copy read-only response fields such as `configured`, `enabled`, or `active_reserved_number`.
+
+The supplied list replaces the previous list; `[]` clears it and omission preserves it. Other inbound fields follow the REST replacement behavior described above, so a passthrough-only inbound object is not a valid PUT. For a first profile, configure the required instructions and greeting as described above. Read preferences again after saving to verify the result.
 
 Matched callers keep their incoming caller ID and bypass the assistant, greeting, recording and transcription. Passthrough works independently of `loop_in_user`, including when the assistant is handling another call. Unmatched callers follow the saved assistant behavior. The destination always comes from the verified account phone, never `handoff_number`. A missing eligible destination rejects the call. If the destination does not answer within 30 seconds, the call ends; the destination's voicemail may answer first. Avoid enabling passthrough if that phone forwards calls back to the reserved number.
 

@@ -86,7 +86,7 @@ Do not promise that a human-to-human conversation becomes unrecorded after conne
 3. Use `update_call_settings` for the inbound change. Set global voice and personality in a separate call when those need changing.
 4. Read back `get_call_settings` to verify what is active. Explain the resulting behavior in plain language, not only that a save succeeded.
 
-Updates are partial: omitted fields preserve saved values, including the loop-in flag. Instructions are required for first setup. Explicit false disables loop-in and clears a legacy destination; true selects the account phone and clears the legacy destination. Null is not a valid loop-in flag value.
+Updates are partial: omitted fields preserve saved values, including the loop-in flag. Instructions are required for first assistant setup; a passthrough-only update can use the default profile. Explicit false disables loop-in and clears a legacy destination; true selects the account phone and clears the legacy destination. Null is not a valid loop-in flag value.
 
 Use `inbound: null` only when the user asks to clear the inbound profile. Do not describe this as cancelling the reserved number. Use the returned state to explain the remaining answering behavior.
 
