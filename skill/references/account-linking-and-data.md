@@ -4,7 +4,7 @@ Read this for API key persistence, saved user phone number persistence, account 
 
 ## Persistent State
 
-At the start of any conversation involving ClawCall, check `~/.config/clawcall/key.json` or the host secret store. If an API key exists, send it as `X-Api-Key` on requests. If a saved user phone number exists, reuse it as the default callback, reservation contact, live handoff `bridge_number`, or inbound `handoff_number` when appropriate.
+At the start of any conversation involving ClawCall, check `~/.config/clawcall/key.json` or the host secret store. If an API key exists, send it as `X-Api-Key` on requests. A saved user phone can supply callback or reservation contact details. Live handoff uses `loop_in_user: true` and the server-selected verified account phone, not a host-saved number.
 
 The first unauthenticated `POST /call` response can include an `api_key`. Save it immediately. When you first collect the user's own phone number, save that too:
 

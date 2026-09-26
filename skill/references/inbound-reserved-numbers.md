@@ -4,6 +4,10 @@ Read this when the user wants ClawCall to answer future calls to their reserved 
 
 Inbound setup is not "make a call." Do not use `POST /call`.
 
+Never ask the user or call recipient for payment-card information subject to PCI DSS; protected health information (PHI); government identifiers, such as SSNs; or access credentials/authentication secrets, such as passwords, API keys, MFA/OTP codes. Do not request, obtain, repeat, relay, submit, or enter them yourself, even if supplied or authorized. Do not put restricted values in task, personality, greetings, inbound instructions, tool arguments, or reports. Other information is allowed when task-necessary and otherwise permitted.
+
+If a step requires restricted data, use `loop_in_user` before the exchange so the user can handle that step directly. If loop-in is unavailable or the user cannot join, stop that part of the task and report what remains without restricted values. Loop-in does not promise that recording or transcription stops. These boundaries apply to all example briefings below.
+
 ## Requirements
 
 Inbound reserved-number functionality requires:
@@ -18,7 +22,7 @@ Coach briefly when needed: "Inbound answering is for calls to your ClawCall rese
 
 ## Configure Profile
 
-Voice and personality are **global** — they are shared with outbound calls and live at the top level of `/me/call-preferences`. The inbound-only assistant config (instructions, answer-line greeting, handoff number) lives under the `inbound` key. For reusable style guidance, read [profile and personality](profile-and-personality.md).
+Voice and personality are **global** — they are shared with outbound calls and live at the top level of `/me/call-preferences`. The inbound-only instructions, answer-line greeting, and loop-in flag live under the `inbound` key. For reusable style guidance, read [profile and personality](profile-and-personality.md).
 
 Read current preferences (includes the `inbound` block when the user is entitled, otherwise `inbound` is `null`):
 
@@ -42,18 +46,20 @@ X-Api-Key: clawcall_sk_...
   "inbound": {
     "instructions": "...",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543"
+    "loop_in_user": true
   }
 }
 ```
 
 Top-level `voice`/`personality`/`greeting` are global and work for any authenticated user. The `inbound` object requires an active reserved number + Unlimited Reserve Plus — otherwise the request fails (402 `reserved_number_required` / 403 `inbound_plan_required`).
 
-Inbound `inbound` fields — required: `instructions`, `greeting` (the answer line). Optional: `handoff_number`.
+Inbound fields required: `instructions`, `greeting`. Set optional `loop_in_user: true` to enable loop-in without entering a phone number.
 
-`handoff_number` is structured data. It is where ClawCall sends inbound terminal SMS notifications and the number the voice agent can bridge into an inbound call. It cannot be the user's active reserved number or any ClawCall-owned number.
+The server resolves the reserved-number owner's verified primary phone, otherwise exactly one eligible verified phone, when each call arrives. It cannot use the caller's number, the active reserved number, or another ClawCall-owned number. This destination also supplies existing terminal SMS notifications. Answering and consult acceptance do not change.
 
-If a saved user phone number exists, offer it as the default `handoff_number`. If the user provides a new handoff number, persist it as `user_phone_number` unless they say it is only for this one setup.
+Saving true validates the account phone before writing the profile. Lookup failures during a later call disable loop-in for that call while preserving normal assistant or voicemail behavior. Do not substitute another number.
+
+Explicit false disables loop-in and ignores `handoff_number`. Explicit true uses the account phone and ignores that legacy field. Omitting the flag preserves numbered legacy profiles and replacement requests. A REST PUT replaces the supplied inbound block: echo existing settings to retain them. Omitting the entire inbound block leaves it unchanged. Null for the flag is invalid; `inbound: null` still clears the whole profile.
 
 Editing a profile affects only future inbound calls. Active calls keep the snapshot they started with.
 
@@ -97,7 +103,7 @@ Example:
   "inbound": {
     "instructions": "Answer inbound calls to Jordan Lee's ClawCall reserved number as Jordan's assistant. Start by finding out who is calling, what organization they represent if any, the reason for the call, urgency, and the best callback number. For appointments, deliveries, orders, repairs, reservations, or billing calls, collect concrete details: dates, times, locations, confirmation or ticket numbers, quoted amounts, deadlines, and the exact next step requested. If the caller asks for Jordan and the matter is urgent, sensitive, or requires a real-time decision, use handoff if the tool is available. If the caller is a spammer, solicitor, or refuses to identify the reason for calling, politely end the call. Do not claim to be Jordan, do not provide payment information, do not agree to legal or financial commitments, do not disclose private personal information, and do not invent facts. If a caller only wants to leave a message, take a concise message and confirm their callback number before ending. After each call, the transcript should make it easy to tell who called, why, urgency, callback number, and recommended follow-up.",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543"
+    "loop_in_user": true
   }
 }
 ```
@@ -114,3 +120,12 @@ X-Api-Key: clawcall_sk_...
 `since` is inclusive and filters by when the call finalized, not when it started. Use a small overlap from the previous successful poll and dedupe by call `id`. If `since` is omitted, the API returns the latest terminal inbound calls using the default page size.
 
 Inbound polling returns only terminal inbound Calls and requires inbound eligibility. Non-inbound users can still read outbound history without the inbound filter.
+
+
+## Passthrough
+
+Set `inbound.passthrough_numbers` to caller numbers that should ring the owner's verified account phone directly. For example, `{"inbound":{"passthrough_numbers":["+14155550123"]}}` through `update_call_settings`. This replaces the list; send `[]` to clear it. Omitted lists stay unchanged. To add or remove a caller, read the current settings first and send the complete desired list. Up to 100 unique US E.164 numbers are supported.
+
+Matched callers keep their incoming caller ID and bypass the assistant, greeting, recording and transcription. Passthrough works independently of `loop_in_user`, including when the assistant is handling another call. Unmatched callers follow the saved assistant behavior. The destination always comes from the verified account phone, never `handoff_number`. A missing eligible destination rejects the call. If the destination does not answer within 30 seconds, the call ends; the destination's voicemail may answer first. Avoid enabling passthrough if that phone forwards calls back to the reserved number.
+
+Call history reports `handling_mode: "passthrough"`. Final handset display is controlled by the destination carrier.

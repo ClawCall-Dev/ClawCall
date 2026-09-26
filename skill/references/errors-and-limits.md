@@ -30,6 +30,17 @@ Always preserve returned URLs exactly. They are personalized.
 | `invalid_profile` (400) | Fix missing/invalid inbound `instructions` or `greeting`. |
 | `invalid_handoff_number` (400) | Ask for an external reachable handoff number that is not a ClawCall number. |
 
+## Loop-in errors
+
+These errors apply to outbound call setup and inbound profile saves.
+
+| Code | What to do |
+| --- | --- |
+| `invalid_loop_in_user` (400) | Send true or false, not null or a string. |
+| `account_phone_unavailable` (422) | Connect the account or correct its verified primary phone. Never substitute a number from chat. |
+| `account_phone_lookup_unavailable` (503) | Explain the temporary lookup failure. The user can try again shortly; no outbound call was placed. Do not ask them to reverify. |
+| `invalid_loop_in_destination` (400) | Explain that the account phone cannot be the other participant or a ClawCall-owned number. |
+
 ## Outcomes
 
 For terminal calls, prefer the server-provided `outcome_detail.reason.message` and use `outcome_detail.reason.retryable` to decide whether to offer a retry. The table below is fallback guidance for older servers.
@@ -66,4 +77,8 @@ Balance-aware responses can include:
 - `X-ClawCall-Balance-Minutes`
 - `X-ClawCall-Tier`
 
-When balance drops below 120 seconds, mention it briefly.
+An entitled plan in the account balance means unlimited calling. Where second counters are exposed, Unlimited balance responses and completed-call metadata report `unlimited: true` and `balance_seconds: null`, with the current `plan` and no low-balance warning. Never treat a null balance as zero.
+
+Trial responses include `trial.allowed`, `trial.remainingCalls`, and `trial.remainingSeconds`. Calls can remain available when seconds reach zero because the trial ends only when both allowances are exhausted. Use `trial.allowed` to interpret availability.
+
+For metered balances, mention a returned low-balance warning briefly.

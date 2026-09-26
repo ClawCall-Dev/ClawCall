@@ -25,7 +25,7 @@ US only. The skill validates `+1` E.164 numbers and refuses to dial internationa
 ## Known Risks and Mitigations
 
 Risk: The voice agent may commit to a booking, cancellation, payment, or other binding action on the user's behalf based only on what's in the call instructions.
-Mitigation: Call instructions must explicitly state decision boundaries and what not to agree to. For sensitive or negotiable calls, the skill offers live handoff via `bridge_number` so the user joins before any commitment.
+Mitigation: Call instructions must explicitly state decision boundaries and what not to agree to. For sensitive or negotiable calls, the skill offers live handoff via `loop_in_user: true` to the verified account phone so the user can choose to join before any commitment.
 
 Risk: A phone agent could be asked to provide private user information (DOB, account numbers, OTPs, payment details) it does not have or should not disclose.
 Mitigation: The skill instructs agents to anticipate verification points up front, to refuse to fabricate identity details, and to bridge the user in for live verification rather than guess.

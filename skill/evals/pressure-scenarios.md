@@ -43,7 +43,7 @@ Expected:
 - Do not use `POST /call`.
 - Explain inbound requires Unlimited Reserve Plus, active reserved number, and account-linked key.
 - Read `GET /me/call-preferences` first if authenticated (the `inbound` block is null when not entitled).
-- Set global `voice`/`personality` at the top level; write rich inbound `instructions` + `greeting` (optional `handoff_number`) under the `inbound` object.
+- Set global `voice`/`personality` at the top level; write rich inbound `instructions` + `greeting` and the optional `loop_in_user` boolean under the `inbound` object.
 
 ## Inbound History
 
@@ -110,6 +110,6 @@ User: "Get me through to Chase fraud support."
 Expected:
 
 - Offer live handoff because this likely involves identity verification and sensitive decisions.
-- Use the saved user phone number as the default callback number if present; otherwise ask for the user's callback number.
-- Persist any newly collected callback number as `user_phone_number`.
+- Set `loop_in_user: true` without collecting a handoff number. The server selects the verified account phone.
+- Preserve answering and consult acceptance. If account selection fails, report the specific error without substituting a saved phone or silently disabling loop-in.
 - Build Call instructions that tell the agent to navigate menus/hold and bridge the user once a real representative is reached.

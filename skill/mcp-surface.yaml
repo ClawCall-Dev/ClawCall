@@ -1,0 +1,44 @@
+# Every file under skill/ must appear in index.project_from, body, or omit.
+version: 1
+index:
+  project_from:
+    - path: SKILL.md
+      sections: [core-rule, choose-the-workflow]
+body:
+  - path: references/mcp-outbound-calls.md
+    uri: clawcall://guide/outbound
+    guide_topic: outbound
+    adapter: strip-rest-rewrite-tools
+  - path: references/examples.md
+    uri: clawcall://guide/examples
+    guide_topic: examples
+    adapter: strip-rest-rewrite-tools
+  - path: references/errors-and-limits.md
+    uri: clawcall://guide/errors
+    guide_topic: errors
+    adapter: strip-rest-keep-codes
+  - path: references/profile-and-personality.md
+    uri: clawcall://guide/profile
+    guide_topic: profile
+    adapter: strip-rest-rewrite-tools
+  - path: references/mcp-inbound-calls.md
+    uri: clawcall://guide/inbound
+    guide_topic: inbound
+    adapter: strip-rest-rewrite-tools
+  - path: references/account-linking-and-data.md
+    uri: clawcall://guide/privacy
+    guide_topic: privacy
+    adapter: privacy-only
+omit:
+  - path: references/outbound-calls.md
+    reason: REST and packaged-skill workflow; hosted outbound uses the MCP-native guide
+  - path: references/inbound-reserved-numbers.md
+    reason: REST and packaged-skill workflow; hosted inbound uses the MCP-native guide
+  - path: mcp-surface.yaml
+    reason: management manifest; not a playbook
+  - path: references/api-contract.md
+    reason: HTTP contract; MCP tool schemas replace it
+  - path: evals/pressure-scenarios.md
+    reason: author eval, not runtime
+  - path: SkillCard.md
+    reason: marketplace card

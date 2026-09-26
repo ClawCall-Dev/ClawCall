@@ -17,11 +17,25 @@ X-Api-Key: clawcall_sk_...
   "personality": "Alex, a calm, professional assistant calling on behalf of Jordan Lee.",
   "greeting": "Hi, this is Alex calling on behalf of Jordan Lee.",
   "voice": "jessica",
-  "bridge_number": "+15559876543"
+  "loop_in_user": true
 }
 ```
 
-Only `to` and `task` are required. `bridge_number` is only for live handoff.
+Only `to` and `task` are required. `loop_in_user` is an optional boolean that enables live handoff to the authenticated account's verified phone.
+
+| `loop_in_user` | Destination selection |
+| --- | --- |
+| omitted | Preserve legacy `bridge_number`; without it, loop-in is disabled. |
+| false | Disable loop-in, ignoring any `bridge_number`. |
+| true | Select the verified account phone, ignoring any `bridge_number`. |
+
+Null, strings, numbers, arrays, and objects are invalid flag values. True requires a connected account. The server prefers its eligible verified primary phone, otherwise exactly one eligible verified phone. Eligible numbers follow the existing US E.164 policy. The other call participant and ClawCall-owned numbers are prohibited. A request user ID, SMS sender, or host-saved phone cannot select the account or destination.
+
+The server resolves the phone before outbound number allocation and carrier dispatch. Active calls retain that destination through consult and reconnect. Scheduled SMS calls resolve it at dispatch; an explicitly authorized later retry resolves it again. Legacy queued payloads without the flag keep their saved behavior and authorization IDs.
+
+The flag enables the agent's existing loop-in tool. It does not dial the user immediately, answer for them, change consent, or alter consult deadlines.
+
+Errors: `invalid_loop_in_user` is 400; `account_phone_unavailable` is 422 for a missing account or missing/ambiguous eligible verified phone; `account_phone_lookup_unavailable` is 503 for a timeout or provider outage; `invalid_loop_in_destination` is 400 for a prohibited destination. No outbound call is placed for these failures.
 
 Response:
 
@@ -34,6 +48,16 @@ Response:
 ```
 
 Save `api_key` if present.
+
+## Dashboard chat call-parameter format
+
+`POST /chat` accepts optional `call_params_format: "account-loop-in-v1"`. The declaration selects response representation only, never account identity or phone authority. Absent format retains the legacy bridge-number prompt and DTO for already-open clients. Null, unknown versions, and wrong types return HTTP 400 `unsupported_call_params_format` before invoking the model.
+
+The final SSE `done` payload acknowledges v1 in `call_params_format` and uses `call_params.loopInUser` as a boolean. The new dashboard requires this acknowledgment before showing a confirmation action. A backend that ignores the format cannot silently accept an unsupported new call through that UI. Before modern prompt activation, the upgraded backend can project legacy drafts into the acknowledged boolean representation.
+
+Legacy clients never receive a new account-flag-only actionable draft. If a model emits a choice the legacy DTO cannot express, the server returns `call_params: null`, `status: "gathering"`, and a refresh message. Existing historical cards in already-loaded old frontend code are unchanged. The new dashboard retires superseded unconfirmed drafts and preserves the user's explicit checkbox choice during edits; confirmed historical actions remain available.
+
+Frontend releases wait for the required API release in the same environment. Railway 5.43.1 JSON output must contain the exact terminal success acknowledgment from that upload, in addition to a zero exit status and the existing health check. Build logs, another deployment's health, and early log-stream completion do not satisfy the release gate. Frontend-only releases retain the skipped-API path.
 
 ## `GET /call/{call_id}`
 
@@ -162,7 +186,8 @@ Top-level `voice`/`personality` are global (apply to outbound AND inbound); `gre
     "configured": true,
     "instructions": "Answer as Jordan Lee's assistant...",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543",
+    "loop_in_user": true,
+    "handoff_number": null,
     "active_reserved_number": {
       "id": 12,
       "phone_number": "+15551234567",
@@ -182,6 +207,12 @@ X-Api-Key: clawcall_sk_...
 
 Global fields upsert for any authed user. Include `inbound` (requires Reserve Plus + active reserved number) to set the inbound assistant. If preserving existing global fields while changing only `inbound`, first `GET /me/call-preferences` and echo current top-level values.
 
+The supplied inbound block replaces the prior profile. Omitted `inbound` leaves it unchanged; `inbound: null` clears it. Within a replacement block, omitted `loop_in_user` restores legacy mode using the supplied `handoff_number`, or no destination if that is absent. True and false take precedence over the legacy field and clear it in storage. The server never stores the resolved account phone in preferences. Legacy rows omit the flag on read; new rows return the saved boolean.
+
+Saving true validates the owning account phone. Each future inbound call resolves it again using the reserved-number owner, not the original caller. Lookup failure on arrival disables loop-in for that call while preserving the existing assistant or voicemail flow. Active calls retain their initial destination. The same resolved destination supplies existing inbound terminal notifications.
+
+Hosted MCP `update_call_settings` is a partial update, unlike REST PUT. Omitted inbound fields preserve their current values, including a saved loop-in flag; `inbound: null` clears the profile. SMS `update_inbound_profile` retains replacement semantics. Neither accepts null for the flag.
+
 ```json
 {
   "voice": "sarah",
@@ -189,7 +220,7 @@ Global fields upsert for any authed user. Include `inbound` (requires Reserve Pl
   "inbound": {
     "instructions": "Rich inbound profile instructions...",
     "greeting": "Hi, this is Jordan's assistant. How can I help?",
-    "handoff_number": "+15559876543"
+    "loop_in_user": true
   }
 }
 ```
@@ -240,3 +271,34 @@ Response envelope:
   "recordingWindowMinutes": 10
 }
 ```
+
+
+## Subscription and trial balances
+
+`GET /balance`, completed-call `_meta`, and balance response headers use the same entitlements as `GET /me` and call admission. Active and trialing subscriptions, and past-due subscriptions within the existing grace period, have unlimited calling.
+
+For an Unlimited subscription, `GET /balance` returns:
+
+```json
+{
+  "tier": "paid",
+  "unlimited": true,
+  "balance_seconds": null,
+  "balance_minutes": null,
+  "low_balance": false,
+  "plan": {
+    "id": "unlimited",
+    "status": "active",
+    "cancelAtPeriodEnd": false,
+    "currentPeriodEnd": "2026-10-12T03:38:42.000Z",
+    "grandfatheredUntil": null,
+    "grandfathered": false
+  }
+}
+```
+
+Completed-call `_meta` contains `balance_seconds: null`, `unlimited: true`, and the same `plan`, without a warning or purchase action. The `X-ClawCall-Balance-Seconds` and `X-ClawCall-Balance-Minutes` headers contain the literal `unlimited` on call-start, completed-call, and balance responses. The tier remains `paid`. Clients must accept nullable JSON counters and the nonnumeric header value; do not coerce either to zero.
+
+Legacy prepaid balances remain numeric. Signed-in trial users are reported as `tier: "free"`, using account usage rather than the request IP. Trial balance responses and completed-call metadata include `trial`, matching `GET /me`. A trial can have zero remaining seconds and still allow calls when `remainingCalls` is positive. Exhausted or ended trials report `trial.allowed: false`; completed-call warnings use `trial_exhausted`.
+
+MCP `get_balance` keeps the `plan` / `legacy` / `trial` account view. MCP `get_call` and `place_call_and_wait` preserve Unlimited and trial metadata, while omitting purchase actions.
