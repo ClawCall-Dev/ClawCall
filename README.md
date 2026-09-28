@@ -33,12 +33,14 @@ The Grok Build plugin source is in [`grok/`](./grok). Its official xAI marketpla
 Install the ClawCall skill from ClawHub:
 
 ```bash
-openclaw skills install clawcall-dev
+openclaw skills install @clawcall-dev/clawcall-dev
 ```
 
-Published skill: https://clawhub.ai/clawcall-dev/clawcall-dev
+Published skill: https://clawhub.ai/clawcall-dev/skills/clawcall-dev
 
-Or manually add [`skill/SKILL.md`](./skill/SKILL.md) and its bundled references to your agent's skills directory. The skill uses ClawCall's REST API and persists its low-privilege API key locally.
+Or copy the [`skill/`](./skill) directory, containing only `SKILL.md` and `LICENSE`, into your agent's skills directory. The skill fetches current calling guides and API formats from [ClawCall's public guide index](https://api.clawcall.dev/guides/v1/index.md) before new operations. These instructions change with the server without requiring another skill update. Credentials remain local and are never sent when fetching public guides.
+
+Existing installations need the 2.0.0 migration once. Replace the old skill directory, including its bundled references, with the two-file package. Keep credentials in the host secret store or `~/.config/clawcall/key.json`. Changes to the skill's capabilities or permissions still require a new skill release.
 
 ## Legacy local stdio MCP package
 
@@ -67,13 +69,13 @@ The [`mcp/`](./mcp) directory contains the legacy `@clawcall/mcp` stdio package 
 - [Documentation](https://clawcall.dev/docs)
 - [For AI agents](https://clawcall.dev/for-agents)
 - [Hosted MCP endpoint](https://api.clawcall.dev/mcp)
-- [Published ClawHub skill](https://clawhub.ai/clawcall-dev/clawcall-dev)
+- [Published ClawHub skill](https://clawhub.ai/clawcall-dev/skills/clawcall-dev)
 - [Privacy policy](https://clawcall.dev/privacy)
 - [Terms of service](https://clawcall.dev/terms)
 
 ## License
 
-MIT
+The distributed [`skill/`](./skill/LICENSE) is licensed MIT-0. Other repository components retain their existing MIT licenses. ClawCall service usage is governed separately by its [terms](https://clawcall.dev/terms).
 
 ## Download History
 
