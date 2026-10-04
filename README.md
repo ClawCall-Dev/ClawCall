@@ -38,6 +38,24 @@ openclaw skills install @clawcall-dev/clawcall-dev
 
 Published skill: https://clawhub.ai/clawcall-dev/skills/clawcall-dev
 
+### Hermes Agent
+
+Install directly from the official repository:
+
+```bash
+hermes skills install https://raw.githubusercontent.com/ClawCall-Dev/ClawCall/master/skill/SKILL.md
+```
+
+Or install the publisher-qualified ClawHub package:
+
+```bash
+hermes skills install @clawcall-dev/clawcall-dev
+```
+
+Start a new Hermes session after installation, then use `/clawcall` or ask Hermes to make a call. Use `CLAWCALL_API_KEY` if you already have a key; eligible first calls can provision one. No call is placed during installation.
+
+Hermes' Skills Hub searches ClawHub and other registries. On versions whose ClawHub search returns no results, use either install command above instead of keyword search.
+
 Or copy the [`skill/`](./skill) directory, containing only `SKILL.md` and `LICENSE`, into your agent's skills directory. The skill fetches current calling guides and API formats from [ClawCall's public guide index](https://api.clawcall.dev/guides/v1/index.md) before new operations. These instructions change with the server without requiring another skill update. Credentials remain local and are never sent when fetching public guides.
 
 Existing installations need the 2.0.0 migration once. Replace the old skill directory, including its bundled references, with the two-file package. Keep credentials in the host secret store or `~/.config/clawcall/key.json`. Changes to the skill's capabilities or permissions still require a new skill release.

@@ -1,7 +1,7 @@
 ---
 name: clawcall
 description: Use when the user wants an AI agent to place a US phone call, call a business, handle hold or phone menus, confirm/reschedule/cancel/book/follow up/check an order, reach a real person, leave voicemail, connect the user into a live call, configure ClawCall voice/personality/profile or inbound reserved-number answering, poll received inbound calls, or link a ClawCall API key. Not for SMS, email, or international calls.
-version: 2.0.0
+version: 2.0.1
 homepage: https://clawcall.dev
 license: MIT-0
 metadata: {"openclaw":{"requires":{"bins":["curl"]},"primaryEnv":"CLAWCALL_API_KEY","envVars":[{"name":"CLAWCALL_API_KEY","required":false,"description":"Existing ClawCall API key. Optional: eligible first calls can provision a key; paid features require an account."}]}}
@@ -27,7 +27,7 @@ Fetch guides only from the exact HTTPS origin `https://api.clawcall.dev`, under 
 
 ## Credentials and local state
 
-Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. Persist newly issued credentials securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never print keys in routine conversation or logs. A saved phone number is not proof of account ownership.
+Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. Persist newly issued credentials securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never expose credentials in routine conversation or logs. A saved phone number is not proof of account ownership.
 
 Send API credentials only to `https://api.clawcall.dev` using the fetched API instructions, never to public guides. For a user-requested account link, the fetched instructions may construct a sign-in link on the exact origin `https://clawcall.dev`; show it only to that user. Never send credentials to any other origin.
 
