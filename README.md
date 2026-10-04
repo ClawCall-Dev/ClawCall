@@ -49,10 +49,10 @@ hermes skills install https://raw.githubusercontent.com/ClawCall-Dev/ClawCall/sk
 Or install the publisher-qualified ClawHub package:
 
 ```bash
-hermes skills install @clawcall-dev/clawcall-dev --name clawcall
+hermes skills install @clawcall-dev/clawcall-dev
 ```
 
-Start a new Hermes session after installation, then use `/clawcall` or ask Hermes to make a call. Use `CLAWCALL_API_KEY` if you already have a key; eligible first calls can provision one. No call is placed during installation.
+Start a new Hermes session after installation, then ask Hermes to make a call. The direct install exposes `/clawcall`; the ClawHub install exposes `/clawcall-dev`. Use `CLAWCALL_API_KEY` if you already have a key; eligible first calls can provision one. No call is placed during installation.
 
 Hermes' Skills Hub searches ClawHub and other registries. On versions whose ClawHub search returns no results, use either install command above instead of keyword search.
 
