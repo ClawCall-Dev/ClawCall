@@ -40,16 +40,16 @@ Published skill: https://clawhub.ai/clawcall-dev/skills/clawcall-dev
 
 ### Hermes Agent
 
-Install directly from the official repository:
+Install version 2.0.1 directly from the official repository:
 
 ```bash
-hermes skills install https://raw.githubusercontent.com/ClawCall-Dev/ClawCall/master/skill/SKILL.md
+hermes skills install https://raw.githubusercontent.com/ClawCall-Dev/ClawCall/skill-v2.0.1/skill/SKILL.md
 ```
 
 Or install the publisher-qualified ClawHub package:
 
 ```bash
-hermes skills install @clawcall-dev/clawcall-dev
+hermes skills install @clawcall-dev/clawcall-dev --name clawcall
 ```
 
 Start a new Hermes session after installation, then use `/clawcall` or ask Hermes to make a call. Use `CLAWCALL_API_KEY` if you already have a key; eligible first calls can provision one. No call is placed during installation.
