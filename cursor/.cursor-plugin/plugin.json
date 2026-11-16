@@ -12,5 +12,5 @@
   "repository": "https://github.com/ClawCall-Dev/ClawCall",
   "license": "MIT",
   "keywords": ["clawcall", "phone-calls", "voice", "mcp"],
-  "logo": "assets/logo.svg"
+  "logo": "assets/logo.png"
 }
