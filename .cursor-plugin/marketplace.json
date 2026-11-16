@@ -1,0 +1,17 @@
+{
+  "name": "clawcall",
+  "owner": {
+    "name": "ClawCall",
+    "email": "support@clawcall.dev"
+  },
+  "metadata": {
+    "description": "ClawCall's official plugins: real US phone calls for AI agents."
+  },
+  "plugins": [
+    {
+      "name": "clawcall",
+      "source": "cursor",
+      "description": "Real US phone calls for your agent through ClawCall's hosted OAuth MCP server."
+    }
+  ]
+}
