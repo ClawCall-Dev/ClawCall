@@ -26,7 +26,7 @@ The hosted connector can:
 - configure inbound answering and passthrough callers that ring the verified
   account phone directly with the original caller ID, without recording or transcription
 
-The Grok Build plugin source is in [`grok/`](./grok). Its official xAI marketplace submission is tracked in [xai-org/plugin-marketplace#336](https://github.com/xai-org/plugin-marketplace/pull/336).
+The Cursor and Grok Bot plugin source is in [`cursor/`](./cursor). The Grok Build plugin source is in [`grok/`](./grok). Its official xAI marketplace submission is tracked in [xai-org/plugin-marketplace#336](https://github.com/xai-org/plugin-marketplace/pull/336).
 
 ## Agent skill
 

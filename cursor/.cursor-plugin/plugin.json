@@ -1,0 +1,16 @@
+{
+  "name": "clawcall",
+  "displayName": "ClawCall",
+  "version": "1.0.0",
+  "description": "Real US phone calls for your agent: ClawCall dials businesses, works phone menus, waits on hold, talks to whoever answers, and returns the outcome and transcript. Runs on ClawCall's hosted OAuth MCP server.",
+  "author": {
+    "name": "ClawCall",
+    "email": "support@clawcall.dev",
+    "url": "https://clawcall.dev"
+  },
+  "homepage": "https://clawcall.dev",
+  "repository": "https://github.com/ClawCall-Dev/ClawCall",
+  "license": "MIT",
+  "keywords": ["clawcall", "phone-calls", "voice", "mcp"],
+  "logo": "assets/logo.svg"
+}

@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "clawcall": {
+      "url": "https://api.clawcall.dev/mcp"
+    }
+  }
+}
