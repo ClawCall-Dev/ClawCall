@@ -46,8 +46,9 @@ and workflows, so read its guide instead of relying on this file for field detai
 - Top-level `warm_greeting` (default true) briefs the user privately before a
   loop-in connects them; false connects on answer. It does not enable loop-in and
   does not stop recording or transcription.
-- Inbound settings need Unlimited Reserve Plus with a reserved number; read guide
-  topic `inbound` first. `inbound.passthrough_numbers` replaces the whole list.
+- Inbound settings need Unlimited Reserve Plus with a reserved number, or a
+  number on the user's own connected Twilio account; read guide topic `inbound`
+  first. `inbound.passthrough_numbers` replaces the whole list.
 
 ## Guides
 
