@@ -11,63 +11,52 @@ homepage: https://clawcall.dev
 # ClawCall
 
 ClawCall places real US phone calls for the signed-in user through the hosted MCP
-at `https://api.clawcall.dev/mcp` (OAuth 2.1).
+at `https://api.clawcall.dev/mcp` (OAuth 2.1). The server owns the request format
+and workflows, so read its guide instead of relying on this file for field details.
 
 ## Before every call
 
-1. Call `get_calling_guide` with topic `outbound` (required every time).
-2. When writing Call instructions (`task`), also read topic `examples`.
-3. Confirm consequential goals and decision boundaries with the user before
-   placing a call that can book, buy, cancel, pay, or otherwise commit.
+1. Call `get_calling_guide` with `topic: "outbound"` and `call_format: "structured"`.
+   Read topic `examples` too when the request is unusual.
+2. The phone agent knows only what the request contains. Put every detail the
+   goal depends on into `facts` and `questions`.
+3. Confirm consequential goals and limits with the user before placing a call that
+   can book, buy, cancel, pay, or otherwise commit.
 
-## Place a call
+## Place and follow a call
 
-- Use `place_call` with US E.164 `to` (`+1` + 10 digits) and complete `task`
-  Call instructions (who you represent, goal, known facts, questions,
-  alternatives, what not to promise, voicemail behavior, what to report).
-- Returns `call_id` immediately. Poll `get_call` until `lifecycle` is
-  `finalized`, then `get_call_transcript` before reporting whether the user's
-  goal succeeded.
+- `place_call` takes `to` (US E.164, `+1` and 10 digits), `recipient`,
+  `on_behalf_of`, `goal`, and `authority`. An empty `authority.allow` means ask
+  and relay only; boundaries go in `authority.limits`.
+- Include `handoff` on most calls, listing in `handoff.when` what only the user
+  can handle (one-time codes, payments, identity checks). The agent then rings
+  the account's loop-in contacts or verified phone.
+- `place_call` returns a `call_id`. Call `track_call` until the event is `ended`,
+  then read `get_call_transcript` before saying whether the goal succeeded.
+  `place_call_and_track` places the call and returns its first event.
+- With `delegation: "poll"`, the phone agent can ask you questions during the
+  call; answer each `request` event by calling `track_call` with `reply`.
 - `outcome` is the phone network result, not task success.
-- Use `loop_in_user: true` for live handoff to the signed-in account's verified
-  phone, and put the handoff trigger in `task`. `bridge_number` is legacy.
 - Do not run parallel calls that can book, buy, cancel, or commit.
 
-## Loop-in warm greeting
+## Settings
 
-- Read `get_call_settings` and use `update_call_settings` to save top-level
-  `warm_greeting` for both inbound and outbound loop-in. Keep the saved choice
-  unless the user asks to change it.
-- `warm_greeting: true` is the default: a private greeting explains why the user
-  is needed and asks whether to join. `false` connects immediately when the
-  carrier reports the callback answered, including by voicemail or screening,
-  without a greeting or acceptance question.
-- Pass `warm_greeting` to `place_call` or `place_call_and_wait` for a one-call
-  override. Omission uses the saved choice; null is invalid.
-- This preference does not enable loop-in. Enable it separately with
-  `loop_in_user` and put the trigger in the call instructions.
-- Warm greeting does not control recording or transcription. Do not promise
-  that either stops when the user joins.
+- Read `get_call_settings` before `update_call_settings`, and read it again after
+  to verify. Change voice or personality and inbound settings in separate calls.
+- Top-level `warm_greeting` (default true) briefs the user privately before a
+  loop-in connects them; false connects on answer. It does not enable loop-in and
+  does not stop recording or transcription.
+- Inbound settings need Unlimited Reserve Plus with a reserved number, or a
+  number on the user's own connected Twilio account; read guide topic `inbound`
+  first. `inbound.passthrough_numbers` replaces the whole list.
 
 ## Guides
 
 `get_calling_guide` topics: `outbound`, `examples`, `errors`, `profile`,
-`inbound`, `privacy`.
-
-## Inbound settings
-
-- Read guide topic `inbound` and `get_call_settings` before updating settings.
-- Use `update_call_settings` with an inbound-only patch. Change global voice or
-  personality in a separate call. Read settings again to verify the result.
-- `inbound.passthrough_numbers` lists callers who ring the verified account phone
-  directly with their original caller ID, without the assistant, recording, or
-  conversation transcript. It works independently of loop-in.
-- The list supports up to 100 unique US E.164 numbers. Read the saved list before
-  adding or removing entries and send the complete desired list. Omission
-  preserves it; `[]` clears it.
+`inbound`, `privacy`, `webhooks`.
 
 ## Notes
 
-- Hosted MCP uses OAuth — never ask for or invent an API key.
-- Preserve any `action.url` on errors verbatim.
+- Hosted MCP uses OAuth. Never ask for or invent an API key.
+- Preserve any `action.url` in errors verbatim.
 - US numbers only.
