@@ -7,7 +7,7 @@ https://api.clawcall.dev/mcp
 ```
 
 - **No API key, no carrier account, no number to buy.** The connector signs in with OAuth 2.1, and calls go out from ClawCall's numbers.
-- **Flat price.** Unlimited calls to US numbers for $8.99 a month, with no per-minute charges. Unlimited means fair use for one person or agent, not bulk or automated outreach. The free trial is 30 calls or 30 minutes, whichever comes first, with no credit card.
+- **Flat price.** Unlimited calls to US numbers for $8.99 a month, with no per-minute charges. Unlimited means fair use, not bulk or automated outreach. The free trial is 30 calls or 30 minutes, whichever comes first, with no credit card.
 - **It makes the call itself.** A voice agent holds the conversation in any of 25 languages. You do not build or host a voice pipeline.
 
 ## Quick start
