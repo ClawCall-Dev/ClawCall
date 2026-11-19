@@ -7,7 +7,7 @@ https://api.clawcall.dev/mcp
 ```
 
 - **No API key, no carrier account, no number to buy.** The connector signs in with OAuth 2.1, and calls go out from ClawCall's numbers.
-- **Flat price.** Unlimited calls to US numbers for $8.99 a month, with no per-minute charges. The free trial is 30 calls or 30 minutes, whichever comes first, with no credit card.
+- **Flat price.** Unlimited calls to US numbers for $8.99 a month, with no per-minute charges. Unlimited means fair use for one person or agent, not bulk or automated outreach. The free trial is 30 calls or 30 minutes, whichever comes first, with no credit card.
 - **It makes the call itself.** A voice agent holds the conversation in any of 25 languages. You do not build or host a voice pipeline.
 
 ## Quick start
@@ -24,7 +24,10 @@ Step-by-step guides for each client: [ChatGPT](https://clawcall.dev/guides/chatg
 | --- | --- |
 | `get_calling_guide` | Reads ClawCall's current guide for briefing a call |
 | `place_call` | Starts a call and returns at once with a call ID |
-| `place_call_and_wait` | Places one call and waits for the result |
+| `place_call_and_wait` | Places one call and waits briefly (45 seconds by default) for the result |
+| `place_call_and_track` | Places one call and returns its first event |
+| `track_call` | Waits for the next event on a call: ringing, answered, a question from the phone agent, or ended |
+| `reply_on_call` | Answers a question the phone agent asked your agent during a live call |
 | `get_call` | Call status and outcome |
 | `get_call_transcript` | Full turn-by-turn transcript |
 | `get_recording` | Temporary recording link, when a recording was captured |
@@ -39,8 +42,8 @@ On a call, ClawCall:
 - navigates phone menus (keypad presses) and waits on hold
 - speaks any of 25 languages and follows the other side if they switch
 - rings you into the call when a decision, a one-time code or a payment detail is yours to give
-- leaves a voicemail or takes a message when told to
-- answers calls to your own reserved number on the Unlimited Reserve Plus plan
+- leaves a voicemail when told to
+- answers calls to your own reserved number and takes messages, on the Unlimited Reserve Plus plan
 
 ## How ClawCall compares
 
@@ -49,14 +52,14 @@ Ways to give an AI agent a phone, from each vendor's own docs and pricing pages 
 | | Connect | Your own number or carrier | Price for US calls | Phone menus and hold | Calls to |
 | --- | --- | --- | --- | --- | --- |
 | **ClawCall** | Remote MCP, OAuth sign-in | Not needed | Flat $8.99/month, unlimited; free trial of 30 calls or 30 minutes | Both | US numbers only |
-| [AgentPhone](https://agentphone.ai/pricing) | Remote MCP with OAuth or an API key | Buy a number, $3/month each | $0.22/min with its hosted voice agent, $0.13/min with your own; $5 starting credit | Keypad presses stated; hold not stated | Numbers in the US and Canada |
-| [Vapi](https://vapi.ai/pricing) | Remote MCP, OAuth sign-in | Outbound calls need a number imported from Twilio, Telnyx or another carrier ([docs](https://docs.vapi.ai/phone-calling.md)) | $0.05/min platform fee plus model, voice and transcription costs | Keypad presses stated; hold not stated | Not stated |
-| [Bland](https://www.bland.ai/pricing) | Remote MCP with OAuth or an API key | Not needed; shared number, or a dedicated one on its Agent Phone Plan | $0.14/min on the Start plan; Agent Phone Plan $19.99/month after the first month | Not stated | Not stated |
-| [Twilio](https://github.com/twilio-labs/mcp) | Local MCP server with your Twilio API keys | Your own Twilio account and numbers | $0.014/min outbound for the phone line only ([pricing](https://www.twilio.com/en-us/voice/pricing/us)); the voice agent is yours to build | Not built in | Not stated |
+| [AgentPhone](https://agentphone.ai/pricing) | Remote MCP with OAuth or an API key | Buy a number, $3/month each | $0.22/min with its hosted voice agent, $0.13/min with your own; $5 starting credit | Keypad presses stated; hold not stated | Not stated (its numbers are US and Canada) |
+| [Vapi](https://vapi.ai/pricing) | Remote MCP, OAuth sign-in | Outbound calls need a number imported from Twilio, Telnyx or another carrier ([docs](https://docs.vapi.ai/phone-calling.md)) | $0.05/min platform fee plus model, voice and transcription costs | Keypad presses stated; hold not stated | Depends on the number you import; international calls stated |
+| [Bland](https://www.bland.ai/pricing) | Remote MCP with OAuth or an API key | Not needed; shared number, or a dedicated one on its Agent Phone Plan | $0.14/min on the Start plan, or the Agent Phone Plan: unlimited US and Canada calls for $9.99 the first month, then $19.99/month | Phone menus stated; hold not stated | US and Canada on the Agent Phone Plan; other countries from credits |
+| [Twilio](https://github.com/twilio-labs/mcp) | Local MCP server with your Twilio API keys | Your own Twilio account and numbers | $0.014/min outbound for the phone line only ([pricing](https://www.twilio.com/en-us/voice/pricing/us)); the voice agent is yours to build | Not built in | International, priced by country |
 | [call4me](https://call4.me/pricing) | Remote MCP, Google or X sign-in or an API key | Not needed | $0.25/min from pickup, $0.125/min on hold | Both | US, Canada, EU, UK and more |
-| [OsmO](https://getosmo.app/mcp) | Remote MCP, sign-in by text message | An OsmO app account | 3 credits per answered call, 50 free credits | Simple hold queues stated; menus not stated | US, UK, India, Canada, Australia |
+| [OsmO](https://getosmo.app/mcp) | Remote MCP, sign-in by text message | Not needed | 3 credits per answered call, 50 free credits ([details](https://getosmo.app/ai-calls/mcp-phone-calls-for-agents)) | Both | US, UK, India, Canada, Australia |
 
-What that means for 100 five-minute calls a month (500 minutes) at each published per-minute rate: $110 on AgentPhone's hosted agent plus the number, $70 on Bland's Start plan, up to $125 on call4me (its hold time bills at half rate), and $8.99 on ClawCall.
+What that means for 100 five-minute calls a month (500 minutes) at each published rate: $113 on AgentPhone's hosted agent with one number, at least $70 on Bland's Start plan or $19.99 on its Agent Phone Plan, up to $125 on call4me (its hold time bills at half rate), and $8.99 on ClawCall.
 
 Where ClawCall is the wrong choice:
 
