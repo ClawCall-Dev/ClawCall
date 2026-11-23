@@ -4,7 +4,7 @@ description: Use when the user wants an AI agent to place a US phone call, call 
 version: 2.0.0
 homepage: https://clawcall.dev
 license: MIT-0
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"primaryEnv":"CLAWCALL_API_KEY","envVars":[{"name":"CLAWCALL_API_KEY","required":false,"description":"Existing ClawCall API key. Optional: eligible first calls can provision a key; paid features require an account."}]}}
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"primaryEnv":"CLAWCALL_API_KEY","envVars":[{"name":"CLAWCALL_API_KEY","required":true,"description":"ClawCall API key from Dashboard → API keys at clawcall.dev. Calls need one; sign up free to create it."}]}}
 ---
 
 # ClawCall
@@ -27,7 +27,7 @@ Fetch guides only from the exact HTTPS origin `https://api.clawcall.dev`, under 
 
 ## Credentials and local state
 
-Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. Persist newly issued credentials securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never print keys in routine conversation or logs. A saved phone number is not proof of account ownership.
+Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. If none exists, ask the user to sign up at `https://clawcall.dev/sign-up` and create a key under Dashboard → API keys. Persist a key the user gives you securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never print keys in routine conversation or logs. A saved phone number is not proof of account ownership.
 
 Send API credentials only to `https://api.clawcall.dev` using the fetched API instructions, never to public guides. For a user-requested account link, the fetched instructions may construct a sign-in link on the exact origin `https://clawcall.dev`; show it only to that user. Never send credentials to any other origin.
 
