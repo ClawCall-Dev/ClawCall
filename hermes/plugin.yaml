@@ -1,0 +1,68 @@
+name: clawcall
+label: ClawCall (phone)
+kind: standalone
+version: "1.0.0"
+manifest_version: 2
+api_version: 1
+description: >
+  Place and manage real US +1 phone calls from Hermes Agent via ClawCall without a Twilio,
+  Bland, or Vapi account. Calls ask for approval first through Hermes's approval gate, block
+  non-US, emergency, and premium-rate numbers locally, and store no transcripts on disk.
+author: ClawCall
+license: MIT
+homepage: https://clawcall.dev
+tags: [phone, voice, calls, telephony, mcp]
+requires_hermes: ">=0.23.0"
+
+provides_tools:
+  - clawcall_get_balance
+  - clawcall_place_call
+  - clawcall_get_call
+  - clawcall_get_call_transcript
+  - clawcall_list_calls
+  - clawcall_get_recording
+  - clawcall_hangup_call
+  - clawcall_get_call_settings
+  - clawcall_update_call_settings
+
+provides_hooks:
+  - pre_tool_call
+
+provides_middleware: []
+
+requires_env:
+  - name: CLAWCALL_API_KEY
+    description: "ClawCall API key (clawcall_sk_...) from Dashboard -> API keys at clawcall.dev. Used for REST tool calls; optional if you connect ClawCall via Hermes's remote MCP OAuth config instead."
+    prompt: "ClawCall API key"
+    url: "https://clawcall.dev/dashboard/keys"
+    secret: true
+    password: true
+
+optional_env:
+  - name: CLAWCALL_ACCESS_TOKEN
+    description: "Optional OAuth 2.1 bearer token for ClawCall's remote MCP endpoint (https://api.clawcall.dev/mcp) when using MCP transport mode."
+    prompt: "ClawCall OAuth access token (optional)"
+    secret: true
+    password: true
+
+config_schema:
+  require_approval:
+    type: bool
+    default: true
+    label: Ask before calling or changing settings
+    description: Send every call, hangup, and account setting update to Hermes's approval prompt with full details.
+  allowed_numbers:
+    type: list
+    default: []
+    label: Allowed destination numbers
+    description: Optional E.164 US +1 allowlist. When set, tools may only dial these numbers. Scheduled (cron) runs can only dial numbers listed here.
+  transport:
+    type: str
+    default: rest
+    label: Transport mode
+    description: Transport used by the Python tools ("rest" for https://api.clawcall.dev with CLAWCALL_API_KEY, or "mcp" for https://api.clawcall.dev/mcp with CLAWCALL_ACCESS_TOKEN).
+  timeout_seconds:
+    type: int
+    default: 30
+    label: HTTP timeout (seconds)
+    description: Request timeout in seconds for ClawCall API calls.
