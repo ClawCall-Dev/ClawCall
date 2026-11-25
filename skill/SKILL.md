@@ -1,15 +1,25 @@
 ---
 name: clawcall
 description: Use when the user wants an AI agent to place a US phone call, call a business, handle hold or phone menus, confirm/reschedule/cancel/book/follow up/check an order, reach a real person, leave voicemail, connect the user into a live call, configure ClawCall voice/personality/profile or inbound reserved-number answering, poll received inbound calls, or link a ClawCall API key. Not for SMS, email, or international calls.
-version: 2.0.0
+version: 2.1.0
 homepage: https://clawcall.dev
 license: MIT-0
-metadata: {"openclaw":{"requires":{"bins":["curl"]},"primaryEnv":"CLAWCALL_API_KEY","envVars":[{"name":"CLAWCALL_API_KEY","required":true,"description":"ClawCall API key from Dashboard → API keys at clawcall.dev. Calls need one; sign up free to create it."}]}}
+keywords:
+  - phone
+  - calls
+  - voice-agent
+  - hold-for-me
+  - ivr
+  - mcp
+  - openclaw
+  - hermes
+  - clawcall
+metadata: {"openclaw":{"requires":{"bins":["curl"]},"primaryEnv":"CLAWCALL_API_KEY","envVars":[{"name":"CLAWCALL_API_KEY","required":true,"description":"ClawCall API key from Dashboard -> API keys at clawcall.dev. Calls need one; sign up free to create it."}]},"hermes":{"mcpEndpoint":"https://api.clawcall.dev/mcp","transport":"streamable-http","auth":"oauth2-pkce-dcr","scopes":["calls:read","calls:write"],"guides":{"setup":"https://clawcall.dev/guides/hermes-mcp","compare":"https://clawcall.dev/compare/hermes-agent-phone-calls"}}}
 ---
 
 # ClawCall
 
-ClawCall places real US phone calls and manages calling preferences and inbound answering. Service usage may incur charges under the user's ClawCall account. This installed skill is licensed MIT-0; service terms are at https://clawcall.dev/terms.
+ClawCall places real US phone calls in 25 languages and manages calling preferences and inbound answering on an active reserved number. Service usage may incur charges under the user's ClawCall account (free trial of 30 calls or 30 minutes, whichever comes first; paid plans start at $8.99 a month). This installed skill is licensed MIT-0; service terms are at https://clawcall.dev/terms.
 
 ## Fetch current instructions
 
@@ -27,7 +37,7 @@ Fetch guides only from the exact HTTPS origin `https://api.clawcall.dev`, under 
 
 ## Credentials and local state
 
-Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. If none exists, ask the user to sign up at `https://clawcall.dev/sign-up` and create a key under Dashboard → API keys. Persist a key the user gives you securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never print keys in routine conversation or logs. A saved phone number is not proof of account ownership.
+Use an existing `CLAWCALL_API_KEY`, the host secret store, or `~/.config/clawcall/key.json`. If none exists, ask the user to sign up at `https://clawcall.dev/sign-up` and create a key under Dashboard -> API keys. Persist a key the user gives you securely in that file or the host secret store, and retain a user-supplied callback number only for the user's calling workflows. Never print keys in routine conversation or logs. A saved phone number is not proof of account ownership.
 
 Send API credentials only to `https://api.clawcall.dev` using the fetched API instructions, never to public guides. For a user-requested account link, the fetched instructions may construct a sign-in link on the exact origin `https://clawcall.dev`; show it only to that user. Never send credentials to any other origin.
 
@@ -39,4 +49,15 @@ Never ask a call recipient for the recipient's own card details, SSN or other go
 
 For passwords, live one-time codes and full payment-card numbers, prefer loop-in or a private consult so the value is spoken live instead of written into the request, where it would be stored.
 
-Use the live guide’s loop-in fields for live codes and decisions the user needs to make. If the user cannot join, report the remaining step instead of guessing or making an unauthorized decision. Loop-in does not promise that recording or transcription stops.
+Use the live guide's loop-in fields for live codes and decisions the user needs to make. If the user cannot join, report the remaining step instead of guessing or making an unauthorized decision. Loop-in does not promise that recording or transcription stops.
+
+## Setup guides and remote MCP
+
+For hosts that support remote Streamable HTTP MCP with OAuth 2.1, connect to `https://api.clawcall.dev/mcp` (no API key required).
+
+- OpenClaw phone calling overview: https://clawcall.dev/compare/openclaw-phone-calls
+- OpenClaw setup guide: https://clawcall.dev/guides/openclaw-mcp
+- Hermes Agent phone calling overview: https://clawcall.dev/compare/hermes-agent-phone-calls
+- Hermes Agent setup guide: https://clawcall.dev/guides/hermes-mcp
+- Web agent skill reference: https://clawcall.dev/skill.md
+- API and MCP documentation: https://clawcall.dev/docs
