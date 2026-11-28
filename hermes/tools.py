@@ -114,6 +114,12 @@ def _validate_place_call_payload(
                     contact.get("phone"),
                     field_name=f"handoff.contacts[{idx}].phone",
                 )
+                if allowlist and contact["phone"] not in allowlist:
+                    raise PhoneValidationError(
+                        "number_not_allowed",
+                        f"handoff.contacts[{idx}].phone: {contact['phone']} is not in the configured "
+                        "allowed_numbers list.",
+                    )
 
     voicemail = params.get("voicemail")
     if voicemail is not None:

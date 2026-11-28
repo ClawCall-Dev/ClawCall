@@ -220,6 +220,128 @@ class TestApprovalGateAndPreToolCall(unittest.TestCase):
         self.assertIsNone(allowed_cron)
 
 
+class TestHandoffNumbersApprovedAndAllowlisted(unittest.TestCase):
+    def _full_payload(self, contact_phone: str = "+12125550123") -> dict:
+        payload = _sample_call_payload()
+        payload["from"] = "+13105550100"
+        payload["handoff"] = {"contacts": [{"name": "Jordan Lee", "phone": contact_phone}]}
+        payload["voicemail"] = {"kind": "leave_message", "message": "Please call Alex back at 3 PM."}
+        return payload
+
+    def test_approval_prompt_shows_every_number_and_voicemail_text(self) -> None:
+        directive = hc.build_pre_tool_call_directive("clawcall_place_call", self._full_payload())
+        assert directive is not None
+        self.assertEqual(directive["action"], "approve")
+        self.assertIn("Jordan Lee (+12125550123)", directive["message"])
+        self.assertIn("+13105550100", directive["message"])
+        self.assertIn("Please call Alex back at 3 PM.", directive["message"])
+
+    def test_rule_key_changes_when_a_handoff_number_or_voicemail_changes(self) -> None:
+        base = hc.build_pre_tool_call_directive("clawcall_place_call", self._full_payload())
+        other_contact = hc.build_pre_tool_call_directive(
+            "clawcall_place_call", self._full_payload("+12125550199")
+        )
+        other_voicemail_payload = self._full_payload()
+        other_voicemail_payload["voicemail"]["message"] = "Different message."
+        other_voicemail = hc.build_pre_tool_call_directive("clawcall_place_call", other_voicemail_payload)
+        assert base and other_contact and other_voicemail
+        self.assertNotEqual(base["rule_key"], other_contact["rule_key"])
+        self.assertNotEqual(base["rule_key"], other_voicemail["rule_key"])
+
+    def test_handoff_number_outside_allowed_numbers_is_blocked(self) -> None:
+        directive = hc.build_pre_tool_call_directive(
+            "clawcall_place_call",
+            self._full_payload("+12125550123"),
+            allowed_numbers=["+14155550199"],
+        )
+        assert directive is not None
+        self.assertEqual(directive["action"], "block")
+        self.assertIn("handoff.contacts[1].phone", directive["message"])
+
+    def test_cron_refuses_handoff_number_outside_allowed_numbers(self) -> None:
+        blocked = hc.build_pre_tool_call_directive(
+            "clawcall_place_call",
+            self._full_payload("+12125550123"),
+            require_approval=False,
+            in_cron=True,
+            allowed_numbers=["+14155550199"],
+        )
+        assert blocked is not None
+        self.assertEqual(blocked["action"], "block")
+
+        allowed = hc.build_pre_tool_call_directive(
+            "clawcall_place_call",
+            self._full_payload("+12125550123"),
+            require_approval=False,
+            in_cron=True,
+            allowed_numbers=["+14155550199", "+12125550123"],
+        )
+        self.assertIsNone(allowed)
+
+    def test_handler_refuses_handoff_number_outside_allowed_numbers_before_network(self) -> None:
+        transport, recorded = _fake_transport_factory()
+        cfg = hc.ClawCallConfig(
+            transport="rest", api_key="clawcall_sk_test", allowed_numbers=("+14155550199",)
+        )
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.PhoneValidationError):
+            plugin.place_call(self._full_payload("+12125550123"), approved=True)
+        self.assertEqual(recorded, [])
+
+
+class TestClientUrlAndRedirects(unittest.TestCase):
+    def test_call_id_stays_one_path_segment(self) -> None:
+        transport, recorded = _fake_transport_factory(
+            [HttpResponse(200, {"content-type": "application/json"}, json.dumps({"id": "x"}).encode())]
+        )
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        plugin.get_call("../me/api-keys?x=1#y")
+        self.assertEqual(
+            recorded[0][0].url, "https://api.clawcall.dev/call/..%2Fme%2Fapi-keys%3Fx%3D1%23y"
+        )
+
+    def test_dot_only_call_id_is_refused_before_network(self) -> None:
+        transport, recorded = _fake_transport_factory()
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.ClawCallClientError):
+            plugin.get_call("..")
+        self.assertEqual(recorded, [])
+
+    def test_authenticated_request_redirect_is_an_error_not_followed(self) -> None:
+        transport, recorded = _fake_transport_factory(
+            [HttpResponse(302, {"location": "https://evil.example/steal"}, b"")]
+        )
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.ClawCallClientError) as ctx:
+            plugin.get_balance()
+        self.assertEqual(ctx.exception.code, "unexpected_redirect")
+        self.assertEqual(len(recorded), 1)
+
+    def test_default_transport_never_follows_redirects(self) -> None:
+        from hermes_clawcall import client as client_mod
+
+        opened: list[object] = []
+
+        class _Opener:
+            def open(self, *_args, **_kwargs):
+                raise client_mod.URLError("stop")
+
+        def _fake_build_opener(*handlers):
+            opened.append(handlers)
+            return _Opener()
+
+        with mock.patch.object(client_mod, "build_opener", _fake_build_opener):
+            with self.assertRaises(hc.ClawCallClientError):
+                client_mod._default_http_transport(
+                    HttpRequest(method="GET", url="https://api.clawcall.dev/balance", headers={}), 1.0
+                )
+        self.assertEqual(len(opened), 1)
+        self.assertTrue(any(isinstance(h, client_mod._NoRedirectHandler) for h in opened[0]))
+
+
 class TestSecretScopeRule11(unittest.TestCase):
     def test_read_hermes_secret_uses_agent_secret_scope_and_not_os_environ(self) -> None:
         fake_agent_pkg = types.ModuleType("agent")
@@ -250,6 +372,7 @@ class TestConfigAndTransports(unittest.TestCase):
         self.assertEqual(mcp_cfg["url"], "https://api.clawcall.dev/mcp")
         self.assertEqual(mcp_cfg["transport"], "streamable-http")
         self.assertEqual(mcp_cfg["auth"], "oauth")
+        self.assertEqual(mcp_cfg["trust"], "untrusted")
         self.assertEqual(mcp_cfg["scopes"], ["calls:read", "calls:write"])
         self.assertFalse(mcp_cfg["local_transcript_storage"])
 

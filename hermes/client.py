@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import json
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 try:
@@ -41,7 +41,6 @@ class HttpRequest:
     url: str
     headers: dict[str, str]
     body: bytes | None = None
-    follow_redirects: bool = True
 
 
 @dataclass(frozen=True)
@@ -66,7 +65,9 @@ def _default_http_transport(req: HttpRequest, timeout_seconds: float) -> HttpRes
         headers=req.headers,
         method=req.method,
     )
-    opener = build_opener() if req.follow_redirects else build_opener(_NoRedirectHandler())
+    # Never follow redirects: every request carries the ClawCall credential, which must not
+    # leave api.clawcall.dev. A 3xx comes back as a response for the caller to handle.
+    opener = build_opener(_NoRedirectHandler())
     try:
         with opener.open(urllib_req, timeout=timeout_seconds) as resp:
             headers = {k.lower(): v for k, v in resp.headers.items()}
@@ -80,6 +81,13 @@ def _default_http_transport(req: HttpRequest, timeout_seconds: float) -> HttpRes
             f"Network request to ClawCall failed: {err.reason}",
             code="network_error",
         ) from err
+
+
+def _path_segment(value: str) -> str:
+    """Quote an id so it stays one URL path segment under /call/."""
+    if value.strip(".") == "":
+        raise ClawCallClientError(f"Invalid call_id: {value!r}.", code="invalid_call_id")
+    return quote(value, safe="")
 
 
 def _parse_json_or_sse(raw_body: bytes, content_type: str) -> Any:
@@ -235,7 +243,6 @@ class ClawCallClient:
         *,
         params: dict[str, Any] | None = None,
         json_body: dict[str, Any] | None = None,
-        follow_redirects: bool = True,
     ) -> HttpResponse:
         """Send an authenticated request to ClawCall's REST API."""
         url = f"{self._config.rest_base_url.rstrip('/')}{path}"
@@ -260,7 +267,6 @@ class ClawCallClient:
                 url=url,
                 headers=headers,
                 body=body_bytes,
-                follow_redirects=follow_redirects,
             ),
             self._config.timeout_seconds,
         )
@@ -274,6 +280,12 @@ class ClawCallClient:
         json_body: dict[str, Any] | None = None,
     ) -> Any:
         resp = self.rest_request(method, path, params=params, json_body=json_body)
+        if 300 <= resp.status < 400:
+            raise ClawCallClientError(
+                f"ClawCall REST API answered HTTP {resp.status} with a redirect; redirects are not followed.",
+                code="unexpected_redirect",
+                status_code=resp.status,
+            )
         try:
             parsed = json.loads(resp.body.decode("utf-8")) if resp.body else {}
         except json.JSONDecodeError as err:
@@ -306,11 +318,11 @@ class ClawCallClient:
 
         if tool_name == "clawcall_get_call":
             call_id = args["call_id"]
-            return self.rest_json("GET", f"/call/{call_id}")
+            return self.rest_json("GET", f"/call/{_path_segment(call_id)}")
 
         if tool_name == "clawcall_get_call_transcript":
             call_id = args["call_id"]
-            call_data = self.rest_json("GET", f"/call/{call_id}")
+            call_data = self.rest_json("GET", f"/call/{_path_segment(call_id)}")
             return {
                 "call_id": call_data.get("id", call_id),
                 "lifecycle": call_data.get("lifecycle"),
@@ -331,8 +343,7 @@ class ClawCallClient:
             call_id = args["call_id"]
             resp = self.rest_request(
                 "GET",
-                f"/call/{call_id}/recording",
-                follow_redirects=False,
+                f"/call/{_path_segment(call_id)}/recording",
             )
             if resp.status in (301, 302, 303, 307, 308):
                 location = resp.headers.get("location")
@@ -355,7 +366,7 @@ class ClawCallClient:
 
         if tool_name == "clawcall_hangup_call":
             call_id = args["call_id"]
-            return self.rest_json("POST", f"/call/{call_id}/hangup")
+            return self.rest_json("POST", f"/call/{_path_segment(call_id)}/hangup")
 
         if tool_name == "clawcall_get_call_settings":
             return self.rest_json("GET", "/me/call-preferences")

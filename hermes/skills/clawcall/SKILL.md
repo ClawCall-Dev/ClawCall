@@ -14,7 +14,7 @@ ClawCall gives Hermes Agent a real US phone line without a Twilio, Bland, or Vap
 ## Connection
 
 - **Hermes plugin tools:** Install from the Hermes Marketplace (`hermes plugins install clawcall`) and set `CLAWCALL_API_KEY` from `https://clawcall.dev/dashboard/keys` (read via Hermes's `agent.secret_scope.get_secret`).
-- **Remote MCP (no API key):** Add `https://api.clawcall.dev/mcp` under `mcp_servers.clawcall` with `auth: oauth` in `~/.hermes/config.yaml` and run `hermes mcp login clawcall` (OAuth 2.1 with PKCE and Dynamic Client Registration; scopes `calls:read` and `calls:write`).
+- **Remote MCP (no API key):** Add `https://api.clawcall.dev/mcp` under `mcp_servers.clawcall` with `auth: oauth` and `trust: untrusted` in `~/.hermes/config.yaml` (so Hermes asks before every call, hang-up and settings change) and run `hermes mcp login clawcall` (OAuth 2.1 with PKCE and Dynamic Client Registration; scopes `calls:read` and `calls:write`).
 
 ## Tools
 

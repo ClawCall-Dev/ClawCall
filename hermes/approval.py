@@ -55,6 +55,36 @@ def _rule_key(tool_name: str, content: str) -> str:
     return f"clawcall:{tool_name}:{digest}"
 
 
+def _handoff_contacts(params: dict[str, Any]) -> list[dict[str, Any]]:
+    handoff = params.get("handoff")
+    contacts = handoff.get("contacts") if isinstance(handoff, dict) else None
+    if not isinstance(contacts, list):
+        return []
+    return [c if isinstance(c, dict) else {} for c in contacts]
+
+
+def _handoff_line(params: dict[str, Any]) -> str | None:
+    handoff = params.get("handoff")
+    if not isinstance(handoff, dict):
+        return None
+    contacts = _handoff_contacts(params)
+    if not contacts:
+        return "Hand-off: may ring you into the call (your saved ClawCall loop-in list, or your verified phone)"
+    people = ", ".join(
+        f"{c.get('name') or '(no name)'} ({c.get('phone') or 'no number'})" for c in contacts
+    )
+    return f"Hand-off: may ring these people into the call, in order: {people}"
+
+
+def _voicemail_line(params: dict[str, Any]) -> str | None:
+    voicemail = params.get("voicemail")
+    if not isinstance(voicemail, dict):
+        return None
+    if voicemail.get("kind") == "leave_message":
+        return f"At voicemail, leave this message: {voicemail.get('message') or '(empty)'}"
+    return "At voicemail: hang up without leaving a message"
+
+
 def build_approval_message(tool_name: str, params: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if tool_name == "clawcall_place_call":
         recipient = str(params.get("recipient") or "recipient")
@@ -72,6 +102,12 @@ def build_approval_message(tool_name: str, params: dict[str, Any]) -> tuple[str,
         ]
         if limits:
             lines.append(f"Limits: {', '.join(limits)}")
+        from_number = params.get("from")
+        if from_number:
+            lines.append(f"Calling from your line: {from_number}")
+        for extra in (_handoff_line(params), _voicemail_line(params)):
+            if extra:
+                lines.append(extra)
         return (
             "\n".join(lines),
             {
@@ -80,6 +116,11 @@ def build_approval_message(tool_name: str, params: dict[str, Any]) -> tuple[str,
                 "on_behalf_of": on_behalf_of,
                 "goal": goal,
                 "authority": authority,
+                "from": params.get("from"),
+                "handoff_contacts": [
+                    {"name": c.get("name"), "phone": c.get("phone")} for c in _handoff_contacts(params)
+                ],
+                "voicemail": params.get("voicemail"),
             },
         )
 
@@ -149,6 +190,35 @@ def build_pre_tool_call_directive(
                     "because nobody is there to approve it."
                 ),
             }
+
+        if safe_args.get("from"):
+            from_check = validate_us_phone_number(safe_args.get("from"), field_name="from")
+            if not from_check.valid or not from_check.normalized:
+                return {"action": "block", "message": f"ClawCall: {from_check.error}"}
+            safe_args["from"] = from_check.normalized
+
+        # Every number the call can ring passes the same checks as `to`.
+        contacts = _handoff_contacts(safe_args)
+        normalized_contacts: list[dict[str, Any]] = []
+        for idx, contact in enumerate(contacts, start=1):
+            field = f"handoff.contacts[{idx}].phone"
+            check = validate_us_phone_number(contact.get("phone"), field_name=field)
+            if not check.valid or not check.normalized:
+                return {"action": "block", "message": f"ClawCall: {check.error}"}
+            if (allowlist or in_cron) and check.normalized not in allowlist:
+                reason = (
+                    "a scheduled (cron) run cannot ring a hand-off number outside allowed_numbers "
+                    "because nobody is there to approve it"
+                    if in_cron and not allowlist
+                    else "it is not in the configured allowed_numbers list"
+                )
+                return {
+                    "action": "block",
+                    "message": f"ClawCall: {field} {check.normalized} is refused: {reason}.",
+                }
+            normalized_contacts.append({**contact, "phone": check.normalized})
+        if contacts:
+            safe_args["handoff"] = {**safe_args["handoff"], "contacts": normalized_contacts}
 
         goal = str(safe_args.get("goal") or "").strip()
         if len(goal) > MAX_GOAL_CHARS:

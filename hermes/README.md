@@ -16,18 +16,32 @@ Free trial: 30 calls or 30 minutes, whichever comes first, no credit card requir
 
 ClawCall is a third-party calling service at `https://clawcall.dev`. When enabled, call requests, destination numbers, and call settings are sent over HTTPS to `https://api.clawcall.dev` (or `https://api.clawcall.dev/mcp`). Write actions go through Hermes's approval gate, non-US/emergency/premium-rate numbers are refused before dialing, unattended cron runs fail closed outside `allowed_numbers`, and no transcripts or recordings are saved locally. ClawCall deletes recordings after 10 minutes and transcripts after 7 days, makes no HIPAA, PCI, or SOC 2 compliance claims, and identifies itself as an AI when asked on a call.
 
+## Remote MCP instead of the plugin
+
+To use ClawCall's hosted MCP server without installing this plugin, add it to `~/.hermes/config.yaml` with `trust: untrusted`, so Hermes asks before every call, hang-up and settings change:
+
+```yaml
+mcp_servers:
+  clawcall:
+    url: "https://api.clawcall.dev/mcp"
+    auth: oauth
+    trust: untrusted
+```
+
+Then run `hermes mcp login clawcall` once and start a new session.
+
 ## Local setup and testing
 
 Run the full offline unit test suite (zero network calls, standard library only):
 
 ```bash
-python3 -m unittest discover -s plugins/hermes-clawcall/test -v
+python3 -m unittest discover -s hermes/test -v
 ```
 
 Validate with the official Hermes catalog admission tool before submitting a PR to `NousResearch/hermes-agent`:
 
 ```bash
-hermes plugins validate plugins/hermes-clawcall --install-deps
+hermes plugins validate hermes --install-deps
 ```
 
 See [LISTING.md](./LISTING.md) for the complete Hermes Marketplace listing copy and submission steps for `NousResearch/hermes-agent/plugin-catalog/clawcall.yaml`.

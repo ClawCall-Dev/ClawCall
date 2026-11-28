@@ -156,6 +156,8 @@ def build_mcp_config(
         "url": normalized_url,
         "transport": MCP_TRANSPORT,
         "auth": MCP_AUTH_MODE,
+        # Hermes asks before every write-capable tool on an untrusted server.
+        "trust": "untrusted",
         "scopes": list(MCP_SCOPES),
         "enabled": bool(enabled),
         "timeout": float(timeout_seconds),
