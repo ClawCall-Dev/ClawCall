@@ -241,11 +241,15 @@ class ClawCallConfig:
             timeout_val = DEFAULT_TIMEOUT_SECONDS
 
         raw_allowed = cfg("allowed_numbers", CONFIG_DEFAULTS["allowed_numbers"])
-        allowed = tuple(
-            str(item).strip()
-            for item in (raw_allowed if isinstance(raw_allowed, (list, tuple)) else [])
-            if str(item).strip()
-        )
+        # Keep every entry, valid or not: the allowlist check refuses a list with a bad entry
+        # rather than silently dropping it (an emptied list would mean "no restriction").
+        if raw_allowed is None:
+            raw_items: list[Any] = []
+        elif isinstance(raw_allowed, (list, tuple)):
+            raw_items = list(raw_allowed)
+        else:
+            raw_items = [raw_allowed]
+        allowed = tuple(str(item).strip() for item in raw_items)
 
         return cls(
             transport=selected_transport,

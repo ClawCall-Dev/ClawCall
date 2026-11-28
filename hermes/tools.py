@@ -56,7 +56,7 @@ def _validate_place_call_payload(
     # Validate destination number before anything else.
     params["to"] = assert_us_phone_number(params.get("to"), field_name="to")
 
-    allowlist = normalize_allowlist(allowed_numbers)
+    allowlist = normalize_allowlist(allowed_numbers)  # raises AllowlistError on a bad entry
     if allowlist and params["to"] not in allowlist:
         raise PhoneValidationError(
             "number_not_allowed",
@@ -102,6 +102,8 @@ def _validate_place_call_payload(
     if handoff is not None:
         if not isinstance(handoff, dict):
             raise ValueError("handoff must be an object.")
+        if "when" in handoff and handoff["when"] is not None:
+            handoff["when"] = _require_non_empty_string(handoff["when"], "handoff.when")
         contacts = handoff.get("contacts")
         if contacts is not None:
             if not isinstance(contacts, list) or not (1 <= len(contacts) <= 10):
@@ -130,6 +132,12 @@ def _validate_place_call_payload(
             raise ValueError("voicemail.kind must be 'end' or 'leave_message'.")
         if kind == "leave_message":
             voicemail["message"] = _require_non_empty_string(voicemail.get("message"), "voicemail.message")
+        elif "message" in voicemail:
+            raise ValueError("voicemail.message is only allowed with kind 'leave_message'.")
+
+    if "delegation" in params and params["delegation"] is not None:
+        if not isinstance(params["delegation"], bool):
+            raise ValueError("delegation must be true or false.")
 
     return params
 

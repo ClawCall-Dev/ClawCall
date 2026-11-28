@@ -198,6 +198,12 @@ class ClawCallClient:
             ),
             self._config.timeout_seconds,
         )
+        if 300 <= resp.status < 400:
+            raise ClawCallClientError(
+                f"ClawCall MCP answered HTTP {resp.status} with a redirect; redirects are not followed.",
+                code="unexpected_redirect",
+                status_code=resp.status,
+            )
         content_type = resp.headers.get("content-type", "application/json")
         try:
             parsed = _parse_json_or_sse(resp.body, content_type)
@@ -359,7 +365,10 @@ class ClawCallClient:
                     "retention_minutes": 10,
                 }
             if resp.status >= 400:
-                parsed = json.loads(resp.body.decode("utf-8")) if resp.body else {}
+                try:
+                    parsed = json.loads(resp.body.decode("utf-8")) if resp.body else {}
+                except json.JSONDecodeError:
+                    parsed = {}
                 code, message = _extract_error(parsed, resp.status)
                 raise ClawCallClientError(message, code=code, status_code=resp.status, details=parsed)
             return json.loads(resp.body.decode("utf-8")) if resp.body else {}

@@ -55,7 +55,7 @@ config_schema:
     type: list
     default: []
     label: Allowed destination numbers
-    description: Optional E.164 US +1 allowlist. When set, tools may only dial these numbers. Scheduled (cron) runs can only dial numbers listed here.
+    description: Optional E.164 US +1 allowlist. When set, a call's destination and hand-off contacts must be on it, and an entry that is not a valid US +1 number refuses every call until fixed. A hand-off without contacts still rings your own saved loop-in list or verified phone. Scheduled (cron) runs can only dial numbers listed here.
   transport:
     type: str
     default: rest

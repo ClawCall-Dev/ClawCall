@@ -85,8 +85,8 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                     "description": "Optional loop-in settings for ringing the user or named contacts.",
                     "properties": {
                         "when": {
-                            "type": "array",
-                            "items": {"type": "string"},
+                            "type": "string",
+                            "description": "When to ring the user or contacts in, in plain words.",
                         },
                         "warm_greeting": {"type": "boolean"},
                         "contacts": {
@@ -135,9 +135,8 @@ TOOL_SCHEMAS: dict[str, dict[str, Any]] = {
                     "description": "Optional US +1 caller ID line belonging to the account.",
                 },
                 "delegation": {
-                    "type": "string",
-                    "enum": ["none", "poll", "webhook"],
-                    "description": "Optional live delegation mode.",
+                    "type": "boolean",
+                    "description": "Optional: true enables live delegation lookups during the call (default false).",
                 },
             },
             "required": ["to", "recipient", "on_behalf_of", "goal", "authority"],

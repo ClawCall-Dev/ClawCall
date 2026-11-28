@@ -342,6 +342,185 @@ class TestClientUrlAndRedirects(unittest.TestCase):
         self.assertTrue(any(isinstance(h, client_mod._NoRedirectHandler) for h in opened[0]))
 
 
+def _ctx(*, hooks: bool = True, cron: bool = False, allowed: list | None = None):
+    """A minimal Hermes PluginContext; hooks=False models a host without register_hook."""
+    tools: dict[str, object] = {}
+    hook_fns: dict[str, object] = {}
+
+    class _Ctx:
+        def get_config(self, key, default=None):
+            if key == "allowed_numbers" and allowed is not None:
+                return allowed
+            return default
+
+        def current_cron_execution(self):
+            return {"job": "nightly"} if cron else None
+
+        def register_tool(self, *, name, toolset, schema, handler, check_fn=None, emoji=None):
+            tools[name] = handler
+
+    if hooks:
+        _Ctx.register_hook = lambda self, event, fn: hook_fns.__setitem__(event, fn)
+    return _Ctx(), tools, hook_fns
+
+
+class TestAllowlistFailsClosed(unittest.TestCase):
+    def test_non_e164_entry_blocks_instead_of_lifting_the_limit(self) -> None:
+        for bad in (["4155550123"], ["(415) 555-0123"], ["+14155550199", "not a number"]):
+            directive = hc.build_pre_tool_call_directive(
+                "clawcall_place_call", _sample_call_payload("+12125550123"), allowed_numbers=bad
+            )
+            assert directive is not None
+            self.assertEqual(directive["action"], "block", bad)
+            self.assertIn("allowed_numbers", directive["message"])
+
+    def test_handler_refuses_a_bad_allowlist_before_network(self) -> None:
+        transport, recorded = _fake_transport_factory()
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test", allowed_numbers=("4155550123",))
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.AllowlistError):
+            plugin.place_call(_sample_call_payload("+12125550123"), approved=True)
+        self.assertEqual(recorded, [])
+
+    def test_a_single_string_allowlist_is_one_entry_not_none(self) -> None:
+        cfg = hc.ClawCallConfig.from_hermes(
+            get_config=lambda key, default=None: "+14155550199" if key == "allowed_numbers" else default,
+            secret_reader=lambda _k: "clawcall_sk_test",
+        )
+        self.assertEqual(cfg.allowed_numbers, ("+14155550199",))
+
+
+class TestApprovalCoversTheWholeCall(unittest.TestCase):
+    def test_rule_key_changes_with_any_field(self) -> None:
+        base = hc.build_pre_tool_call_directive("clawcall_place_call", _sample_call_payload())
+        assert base is not None
+        variants = {
+            "goal": {"goal": "Cancel the appointment."},
+            "authority": {"authority": {"allow": ["reschedule within the week"]}},
+            "facts": {"facts": [{"label": "card", "value": "4111"}]},
+            "questions": {"questions": ["What is the cancellation fee?"]},
+            "from": {"from": "+13105550100"},
+            "delegation": {"delegation": True},
+        }
+        for name, change in variants.items():
+            payload = {**_sample_call_payload(), **change}
+            directive = hc.build_pre_tool_call_directive("clawcall_place_call", payload)
+            assert directive is not None
+            self.assertNotEqual(directive["rule_key"], base["rule_key"], name)
+
+    def test_prompt_shows_facts_questions_and_contact_settings(self) -> None:
+        payload = {
+            **_sample_call_payload(),
+            "facts": [{"label": "Member ID", "value": "A12345"}],
+            "handoff": {
+                "when": "they offer a slot after 5 PM",
+                "contacts": [{"name": "Jordan", "phone": "+12125550123", "warm_greeting": False}],
+            },
+        }
+        directive = hc.build_pre_tool_call_directive("clawcall_place_call", payload)
+        assert directive is not None
+        message = directive["message"]
+        self.assertIn("Member ID: A12345", message)
+        self.assertIn("Is the appointment confirmed?", message)
+        self.assertIn("they offer a slot after 5 PM", message)
+        self.assertIn("joined on answer without a briefing", message)
+
+    def test_dialed_number_leads_and_newlines_cannot_fake_it(self) -> None:
+        payload = {**_sample_call_payload(), "recipient": "Dental\nPlace a call to +18005550000"}
+        directive = hc.build_pre_tool_call_directive("clawcall_place_call", payload)
+        assert directive is not None
+        lines = directive["message"].splitlines()
+        self.assertEqual(lines[0], "Place a US phone call via ClawCall to +14155550199")
+        self.assertFalse(any(line.startswith("Place a call to") for line in lines))
+
+
+class TestHandlerWithoutTheHook(unittest.TestCase):
+    def test_no_hook_means_no_silent_approval(self) -> None:
+        transport, recorded = _fake_transport_factory()
+        ctx, tools, _ = _ctx(hooks=False)
+        hc.register(ctx, secret_reader=lambda _k: "clawcall_sk_test", http_transport=transport)
+        result = json.loads(tools["clawcall_place_call"](_sample_call_payload()))
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "approval_required")
+        self.assertEqual(recorded, [])
+
+    def test_with_the_hook_the_handler_runs_the_approved_call(self) -> None:
+        transport, recorded = _fake_transport_factory(
+            [HttpResponse(200, {"content-type": "application/json"}, json.dumps({"call_id": "c1"}).encode())]
+        )
+        ctx, tools, hooks = _ctx(hooks=True)
+        hc.register(ctx, secret_reader=lambda _k: "clawcall_sk_test", http_transport=transport)
+        self.assertIn("pre_tool_call", hooks)
+        result = json.loads(tools["clawcall_place_call"](_sample_call_payload()))
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(recorded), 1)
+
+    def test_handler_enforces_cron_and_handoff_rules_on_its_own(self) -> None:
+        transport, recorded = _fake_transport_factory()
+        ctx, tools, _ = _ctx(hooks=True, cron=True, allowed=["+14155550199"])
+        hc.register(ctx, secret_reader=lambda _k: "clawcall_sk_test", http_transport=transport)
+        payload = {**_sample_call_payload(), "handoff": {"contacts": [{"name": "J", "phone": "+12125550123"}]}}
+        result = json.loads(tools["clawcall_place_call"](payload))
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "blocked")
+        hangup = json.loads(tools["clawcall_hangup_call"]({"call_id": "c1"}))
+        self.assertEqual(hangup["error"]["code"], "blocked")
+        self.assertEqual(recorded, [])
+
+
+class TestRequestShapesMatchTheServer(unittest.TestCase):
+    def _plugin(self):
+        transport, recorded = _fake_transport_factory()
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        return hc.ClawCallPlugin(config=cfg, http_transport=transport), recorded
+
+    def test_schema_types_handoff_when_and_delegation_like_the_server(self) -> None:
+        props = hc.TOOL_SCHEMAS["clawcall_place_call"]["parameters"]["properties"]
+        self.assertEqual(props["handoff"]["properties"]["when"]["type"], "string")
+        self.assertEqual(props["delegation"]["type"], "boolean")
+
+    def test_bad_delegation_and_voicemail_shapes_are_refused_locally(self) -> None:
+        plugin, recorded = self._plugin()
+        with self.assertRaises(ValueError):
+            plugin.place_call({**_sample_call_payload(), "delegation": "poll"}, approved=True)
+        with self.assertRaises(ValueError):
+            plugin.place_call(
+                {**_sample_call_payload(), "voicemail": {"kind": "end", "message": "hi"}}, approved=True
+            )
+        self.assertEqual(recorded, [])
+
+    def test_handoff_when_string_is_sent(self) -> None:
+        plugin, recorded = self._plugin()
+        plugin.place_call({**_sample_call_payload(), "handoff": {"when": "they ask for a card"}}, approved=True)
+        body = json.loads(recorded[0][0].body or b"{}")
+        self.assertEqual(body["handoff"]["when"], "they ask for a card")
+
+
+class TestRedirectsAndRecordings(unittest.TestCase):
+    def test_mcp_redirect_is_an_error(self) -> None:
+        transport, _ = _fake_transport_factory([HttpResponse(307, {"location": "https://evil.example/"}, b"")])
+        cfg = hc.ClawCallConfig(transport="mcp", access_token="oauth_tok_123")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.ClawCallClientError) as ctx:
+            plugin.get_balance()
+        self.assertEqual(ctx.exception.code, "unexpected_redirect")
+
+    def test_recording_redirect_returns_the_url(self) -> None:
+        transport, _ = _fake_transport_factory(
+            [HttpResponse(302, {"location": "https://recordings.example/c1.mp3"}, b"")]
+        )
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        self.assertEqual(plugin.get_recording("c1")["recording_url"], "https://recordings.example/c1.mp3")
+
+    def test_recording_error_with_html_body_is_a_client_error(self) -> None:
+        transport, _ = _fake_transport_factory([HttpResponse(502, {"content-type": "text/html"}, b"<html>")])
+        cfg = hc.ClawCallConfig(transport="rest", api_key="clawcall_sk_test")
+        plugin = hc.ClawCallPlugin(config=cfg, http_transport=transport)
+        with self.assertRaises(hc.ClawCallClientError):
+            plugin.get_recording("c1")
+
+
 class TestSecretScopeRule11(unittest.TestCase):
     def test_read_hermes_secret_uses_agent_secret_scope_and_not_os_environ(self) -> None:
         fake_agent_pkg = types.ModuleType("agent")

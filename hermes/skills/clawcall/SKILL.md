@@ -42,6 +42,6 @@ Ask Hermes:
 ## Safety and limits
 
 - **US +1 numbers only:** non-US international numbers, Canadian/Caribbean +1 regions, emergency/N11 codes (`911`, `988`, `211`-`811`), and premium-rate numbers (`900`, `976`) are refused locally before any network call.
-- **Approval gate and cron safety:** every call, hangup, and setting change triggers Hermes's approval prompt with the full brief and fails closed when unattended. Scheduled runs cannot dial numbers outside `allowed_numbers`.
+- **Approval gate and cron safety:** every call, hangup, and setting change triggers Hermes's approval prompt with the full brief and fails closed when unattended. When `allowed_numbers` is set, the destination and every hand-off contact must be on it; scheduled runs cannot dial outside it.
 - **Zero local transcript storage:** nothing is written to local disk. On ClawCall's servers, recordings are deleted after 10 minutes and transcripts after 7 days.
 - **Plan and product boundaries:** Free trial is 30 calls or 30 minutes, whichever comes first, no card. Paid plans are $8.99/mo Unlimited, $14.99/mo Unlimited Reserve (private caller-ID number), and $18.99/mo Unlimited Reserve Plus (inbound answering). Fair use, no bulk or automated outreach, one call at a time, 25 languages, no SMS, no HIPAA/PCI/SOC 2 claims. Says it is an AI when asked.

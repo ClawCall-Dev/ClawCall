@@ -17,6 +17,7 @@ from typing import Any, Callable
 
 try:
     from .approval import (
+        AllowlistError,
         ApprovalDeniedError,
         ApprovalGate,
         ApprovalRequest,
@@ -46,6 +47,7 @@ try:
     from .tools import ClawCallPlugin
 except ImportError:  # pragma: no cover - direct module loading by Hermes plugin loader
     from approval import (
+        AllowlistError,
         ApprovalDeniedError,
         ApprovalGate,
         ApprovalRequest,
@@ -76,6 +78,7 @@ except ImportError:  # pragma: no cover - direct module loading by Hermes plugin
 
 __all__ = [
     "ALL_TOOLS",
+    "AllowlistError",
     "ApprovalDeniedError",
     "ApprovalGate",
     "ApprovalRequest",
@@ -136,6 +139,7 @@ def _build_hermes_handler(
     explicit_config: ClawCallConfig | None,
     secret_reader: SecretReader,
     http_transport: Any,
+    hook_registered: bool,
 ):
     approval_callback = _resolve_context_approval_callback(ctx)
     get_config = _resolve_get_config(ctx)
@@ -146,36 +150,31 @@ def _build_hermes_handler(
             get_config=get_config,
             secret_reader=secret_reader,
         )
-        # In Hermes, pre_tool_call runs before handlers and triggers Hermes's native approval prompt,
-        # failing closed when denied or unattended. Re-enforce cron fail-closed protection here as
-        # defense in depth; honor explicit approval flags or host approval callbacks when supplied.
+        # Re-apply every block rule here (destination, hand-off numbers, allowlist, cron) so they
+        # hold even when the pre_tool_call hook did not run: a host without register_hook, or a
+        # hook that raised and was skipped.
+        blocked = build_pre_tool_call_directive(
+            tool_name,
+            args if isinstance(args, dict) else {},
+            require_approval=False,
+            allowed_numbers=runtime_config.allowed_numbers,
+            in_cron=_is_in_cron(ctx),
+        )
+        if blocked is not None:
+            return json.dumps(
+                {
+                    "ok": False,
+                    "tool": tool_name,
+                    "error": {"code": "blocked", "message": blocked.get("message", "ClawCall: refused.")},
+                }
+            )
+
+        # Hermes's pre_tool_call prompt is the approval. Treat a write as approved only when that
+        # hook is registered; otherwise the approval gate asks for an explicit flag or callback.
         approved = kwargs.get("approved")
         if approved is None and "user_approved" in kwargs:
             approved = kwargs.get("user_approved")
-        if approved is None and approval_callback is None:
-            if _is_in_cron(ctx) and tool_name in WRITE_TOOLS:
-                if tool_name != "clawcall_place_call":
-                    return json.dumps(
-                        {
-                            "ok": False,
-                            "tool": tool_name,
-                            "error": {
-                                "code": "approval_required",
-                                "message": f"{tool_name} is refused during unattended scheduled runs.",
-                            },
-                        }
-                    )
-                if not runtime_config.allowed_numbers:
-                    return json.dumps(
-                        {
-                            "ok": False,
-                            "tool": tool_name,
-                            "error": {
-                                "code": "approval_required",
-                                "message": "Scheduled runs cannot place calls without allowed_numbers configured.",
-                            },
-                        }
-                    )
+        if approved is None and approval_callback is None and hook_registered:
             approved = True
 
         plugin = ClawCallPlugin(
@@ -186,7 +185,7 @@ def _build_hermes_handler(
         try:
             result = plugin.invoke(tool_name, args or {}, approved=approved)
             return json.dumps({"ok": True, "tool": tool_name, "result": result})
-        except (PhoneValidationError, ApprovalRequiredError, ApprovalDeniedError, ClawCallClientError) as err:
+        except (PhoneValidationError, AllowlistError, ApprovalRequiredError, ApprovalDeniedError, ClawCallClientError) as err:
             return json.dumps(
                 {
                     "ok": False,
@@ -249,6 +248,9 @@ def register(
         accepted_kwargs = set()
         accepts_var_kwargs = True
 
+    register_hook_fn = getattr(ctx, "register_hook", None)
+    hook_registered = callable(register_hook_fn)
+
     for tool_name in ALL_TOOLS:
         schema = TOOL_SCHEMAS[tool_name]
         handler = _build_hermes_handler(
@@ -257,6 +259,7 @@ def register(
             explicit_config=config,
             secret_reader=secret_reader,
             http_transport=http_transport,
+            hook_registered=hook_registered,
         )
 
         call_kwargs: dict[str, Any] = {
@@ -272,8 +275,7 @@ def register(
 
         register_tool_fn(**call_kwargs)
 
-    register_hook_fn = getattr(ctx, "register_hook", None)
-    if callable(register_hook_fn):
+    if hook_registered:
         def _pre_tool_call(
             tool_name: str = "",
             args: dict[str, Any] | None = None,
